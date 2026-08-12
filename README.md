@@ -19,6 +19,7 @@ The system allows organizations to create, assign, track, and manage customer su
 - Swagger / OpenAPI
 - Clean Architecture principles
 - Dependency Injection
+- FluentValidation
 - DTO-based API contracts
 - EF Core Migrations
 
