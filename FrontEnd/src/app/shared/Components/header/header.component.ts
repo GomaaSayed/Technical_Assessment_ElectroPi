@@ -1,17 +1,17 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+
 import { Subject, takeUntil } from 'rxjs';
+
 import { AuthService } from '../../services/auth-Service';
 
-interface NotificationItem {
-  id: string;
-  title: string;
-  message: string;
-  type: string;
-  isRead: boolean;
-  createdAt: Date;
-}
+import {
+  NotificationSignalRService,
+  NotificationItem,
+} from '../../services/notification-signalr.service';
+
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-header',
@@ -32,21 +32,132 @@ export class HeaderComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private authService: AuthService,
+    private notificationSignalRService: NotificationSignalRService,
+    private notificationService: NotificationService,
   ) {}
 
-  ngOnInit(): void {
-    // Listen for role changes immediately after login/logout
-    this.authService.role$.pipe(takeUntil(this.destroy$)).subscribe((role) => {
-      this.role = this.normalizeRole(role);
+  // =========================================================
+  // Lifecycle
+  // =========================================================
 
-      // Reload notifications according to the new role
-      this.loadNotifications();
-    });
+  ngOnInit(): void {
+    // =======================================================
+    // Role changes
+    // =======================================================
+
+    this.authService.role$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(async (role) => {
+        this.role = this.normalizeRole(role);
+
+        // Clear old data
+        this.notifications = [];
+        this.unreadCount = 0;
+
+        // ===================================================
+        // Support Agent only
+        // ===================================================
+
+        if (this.isSupportAgent()) {
+          // Load existing notifications from database
+          this.loadNotifications();
+
+          // Start real-time SignalR
+          await this.startSupportAgentNotifications();
+        } else {
+          // Stop SignalR for Admin / Customer
+          await this.notificationSignalRService.stopConnection();
+        }
+      });
+
+    // =======================================================
+    // Real-time notifications
+    // =======================================================
+
+    this.notificationSignalRService.notification$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((notification) => {
+        // SignalR notifications are only for SupportAgent
+        if (!this.isSupportAgent()) {
+          return;
+        }
+
+        console.log('New real-time notification:', notification);
+
+        // Prevent duplicate notification
+        const exists = this.notifications.some((x) => x.id === notification.id);
+
+        if (exists) {
+          return;
+        }
+
+        // Add newest notification at the beginning
+        this.notifications.unshift(notification);
+
+        // Increment unread count only if notification is unread
+        if (!notification.isRead) {
+          this.unreadCount++;
+        }
+      });
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+
+    this.notificationSignalRService.stopConnection();
+  }
+
+  // =========================================================
+  // Load Notifications
+  // =========================================================
+
+  private loadNotifications(): void {
+    if (!this.isSupportAgent()) {
+      return;
+    }
+
+    this.notificationService
+      .getMyNotifications()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (notifications) => {
+          console.log('Loaded notifications:', notifications);
+
+          // Newest first
+          this.notifications = notifications.sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          );
+
+          // Calculate unread notifications
+          this.updateUnreadCount();
+        },
+
+        error: (error) => {
+          console.error('Failed to load notifications:', error);
+
+          this.notifications = [];
+          this.unreadCount = 0;
+        },
+      });
+  }
+
+  // =========================================================
+  // SignalR
+  // =========================================================
+
+  private async startSupportAgentNotifications(): Promise<void> {
+    try {
+      await this.notificationSignalRService.startConnection();
+
+      console.log('Support Agent notification SignalR started successfully.');
+    } catch (error) {
+      console.error(
+        'Failed to start Support Agent notification SignalR:',
+        error,
+      );
+    }
   }
 
   // =========================================================
@@ -89,107 +200,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
   // Notifications
   // =========================================================
 
-  loadNotifications(): void {
-    if (this.isAdmin()) {
-      this.notifications = this.getAdminNotifications();
-    } else if (this.isSupportAgent()) {
-      this.notifications = this.getSupportAgentNotifications();
-    } else if (this.isCustomer()) {
-      this.notifications = this.getCustomerNotifications();
-    } else {
-      this.notifications = [];
-    }
-
-    this.updateUnreadCount();
-  }
-
-  private getAdminNotifications(): NotificationItem[] {
-    return [
-      {
-        id: 'admin-1',
-        title: 'New Ticket',
-        message: 'A new support ticket has been created.',
-        type: 'ticket',
-        isRead: false,
-        createdAt: new Date(),
-      },
-      {
-        id: 'admin-2',
-        title: 'Ticket Updated',
-        message: 'A support ticket has been updated.',
-        type: 'update',
-        isRead: false,
-        createdAt: new Date(),
-      },
-      {
-        id: 'admin-3',
-        title: 'New Customer',
-        message: 'A new customer has registered.',
-        type: 'user',
-        isRead: true,
-        createdAt: new Date(),
-      },
-    ];
-  }
-
-  private getSupportAgentNotifications(): NotificationItem[] {
-    return [
-      {
-        id: 'agent-1',
-        title: 'Ticket Assigned',
-        message: 'A new ticket has been assigned to you.',
-        type: 'assignment',
-        isRead: false,
-        createdAt: new Date(),
-      },
-      {
-        id: 'agent-2',
-        title: 'Ticket Updated',
-        message: 'One of your assigned tickets has been updated.',
-        type: 'update',
-        isRead: false,
-        createdAt: new Date(),
-      },
-      {
-        id: 'agent-3',
-        title: 'New Comment',
-        message: 'A customer added a new comment to a ticket.',
-        type: 'comment',
-        isRead: true,
-        createdAt: new Date(),
-      },
-    ];
-  }
-
-  private getCustomerNotifications(): NotificationItem[] {
-    return [
-      {
-        id: 'customer-1',
-        title: 'Ticket Created',
-        message: 'Your support ticket has been created successfully.',
-        type: 'ticket',
-        isRead: false,
-        createdAt: new Date(),
-      },
-      {
-        id: 'customer-2',
-        title: 'Ticket Updated',
-        message: 'Your ticket status has been updated.',
-        type: 'update',
-        isRead: false,
-        createdAt: new Date(),
-      },
-      {
-        id: 'customer-3',
-        title: 'New Comment',
-        message: 'A support agent added a comment to your ticket.',
-        type: 'comment',
-        isRead: true,
-        createdAt: new Date(),
-      },
-    ];
-  }
-
   updateUnreadCount(): void {
     this.unreadCount = this.notifications.filter(
       (notification) => !notification.isRead,
@@ -197,14 +207,29 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   markAsRead(notification: NotificationItem): void {
+    if (notification.isRead) {
+      return;
+    }
+
     notification.isRead = true;
+
     this.updateUnreadCount();
+
+    // TODO:
+    // Call backend endpoint here later
+    // to persist IsRead = true in database.
   }
 
   markAllAsRead(): void {
-    this.notifications.forEach((notification) => (notification.isRead = true));
+    this.notifications.forEach((notification) => {
+      notification.isRead = true;
+    });
 
     this.updateUnreadCount();
+
+    // TODO:
+    // Call backend endpoint here later
+    // to persist all notifications as read.
   }
 
   // =========================================================
@@ -212,7 +237,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   // =========================================================
 
   getNotificationIcon(type: string): string {
-    switch (type) {
+    switch (type.toLowerCase()) {
       case 'ticket':
         return 'bi-ticket-detailed';
 
@@ -238,9 +263,11 @@ export class HeaderComponent implements OnInit, OnDestroy {
   // =========================================================
 
   getNotificationClass(type: string): string {
+    const notificationType = type.toLowerCase();
+
     // Admin
     if (this.isAdmin()) {
-      switch (type) {
+      switch (notificationType) {
         case 'ticket':
           return 'notification-admin-ticket';
 
@@ -257,7 +284,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
     // Support Agent
     if (this.isSupportAgent()) {
-      switch (type) {
+      switch (notificationType) {
         case 'assignment':
           return 'notification-agent-assignment';
 
@@ -267,6 +294,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
         case 'comment':
           return 'notification-agent-comment';
 
+        case 'ticket':
+          return 'notification-agent';
+
         default:
           return 'notification-agent';
       }
@@ -274,7 +304,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
     // Customer
     if (this.isCustomer()) {
-      switch (type) {
+      switch (notificationType) {
         case 'ticket':
           return 'notification-customer-ticket';
 
@@ -299,16 +329,19 @@ export class HeaderComponent implements OnInit, OnDestroy {
   goToDashboard(): void {
     if (this.isAdmin()) {
       this.router.navigate(['/admin']);
+
       return;
     }
 
     if (this.isSupportAgent()) {
       this.router.navigate(['/supportagent']);
+
       return;
     }
 
     if (this.isCustomer()) {
       this.router.navigate(['/customer']);
+
       return;
     }
 
@@ -319,12 +352,18 @@ export class HeaderComponent implements OnInit, OnDestroy {
   // Logout
   // =========================================================
 
-  logout(): void {
-    this.authService.logout();
+  async logout(): Promise<void> {
+    // Stop SignalR first
+    await this.notificationSignalRService.stopConnection();
 
+    // Clear notifications
     this.notifications = [];
     this.unreadCount = 0;
 
+    // Logout
+    this.authService.logout();
+
+    // Navigate
     this.router.navigate(['/login']);
   }
 }

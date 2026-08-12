@@ -12,6 +12,7 @@ namespace Technical_Assessment_ElectroPi.Infrastructure.Contexts
         public DbSet<TicketComment> TicketComments => Set<TicketComment>();
 
         public DbSet<TicketActivity> TicketActivities => Set<TicketActivity>();
+        public DbSet<Notification> Notifications => Set<Notification>();
 
         public DbSet<TimeEntry> TimeEntries => Set<TimeEntry>();
         public TechnicalAssessmentDbContext(DbContextOptions<TechnicalAssessmentDbContext> options) : base(options)

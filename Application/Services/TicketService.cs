@@ -14,14 +14,16 @@ public class TicketService : ITicketService
     private readonly ITimeEntryRepository _timeEntryRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUser _currentUser;
-
+    private readonly INotificationService _notificationService;
     public TicketService(
-        ITicketRepository ticketRepository,
-        ITicketActivityRepository ticketActivityRepository,
-        ITicketCommentRepository ticketCommentRepository,
-        ITimeEntryRepository timeEntryRepository,
-        IUnitOfWork unitOfWork,
-        ICurrentUser currentUser)
+       ITicketRepository ticketRepository,
+       ITicketActivityRepository ticketActivityRepository,
+       ITicketCommentRepository ticketCommentRepository,
+       ITimeEntryRepository timeEntryRepository,
+       IUnitOfWork unitOfWork,
+       ICurrentUser currentUser,
+       INotificationService notificationService
+      )
     {
         _ticketRepository = ticketRepository;
         _ticketActivityRepository = ticketActivityRepository;
@@ -29,6 +31,7 @@ public class TicketService : ITicketService
         _timeEntryRepository = timeEntryRepository;
         _unitOfWork = unitOfWork;
         _currentUser = currentUser;
+        _notificationService = notificationService;
     }
     public async Task<TicketDto?> GetByIdAsync(
         Guid id,
@@ -386,10 +389,10 @@ public class TicketService : ITicketService
     }
 
     public async Task AssignAgentAsync(
-     Guid ticketId,
-     Guid agentId,
-     Guid performedByUserId,
-     CancellationToken cancellationToken = default)
+    Guid ticketId,
+    Guid agentId,
+    Guid performedByUserId,
+    CancellationToken cancellationToken = default)
     {
         var ticket = await GetTicketAsync(
             ticketId,
@@ -399,9 +402,19 @@ public class TicketService : ITicketService
             agentId,
             performedByUserId);
 
-        await  _ticketActivityRepository.AddAsync(activity);
+        await _ticketActivityRepository.AddAsync(
+            activity,
+            cancellationToken);
 
         await _unitOfWork.SaveChangesAsync(
+            cancellationToken);
+
+        await _notificationService.SendToUserAsync(
+            agentId,
+            "New Ticket Assigned",
+            $"Ticket #{ticket.TicketNumber} has been assigned to you.",
+            "TicketAssigned",
+            ticket.Id,
             cancellationToken);
     }
 

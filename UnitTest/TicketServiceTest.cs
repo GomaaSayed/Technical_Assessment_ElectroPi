@@ -17,7 +17,7 @@ namespace UnitTest
         private readonly Mock<ICurrentUser> _mockCurrentUser;
 
         private readonly ITicketService _ticketService;
-
+        private readonly Mock<INotificationService> _mockNotificationService;
         public TicketServiceTest()
         {
             _mockTicketRepository =
@@ -38,13 +38,18 @@ namespace UnitTest
             _mockCurrentUser =
                 new Mock<ICurrentUser>();
 
+            _mockNotificationService =
+                new Mock<INotificationService>();
+            _mockNotificationService =
+    new Mock<INotificationService>();
             _ticketService = new TicketService(
                 _mockTicketRepository.Object,
                 _mockTicketActivityRepository.Object,
                 _mockTicketCommentRepository.Object,
                 _mockTimeEntryRepository.Object,
                 _mockUnitOfWork.Object,
-                _mockCurrentUser.Object
+                _mockCurrentUser.Object,
+                _mockNotificationService.Object
             );
         }
         [Fact]

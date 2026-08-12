@@ -14,16 +14,18 @@ using Technical_Assessment_ElectroPi.Core.Entities;
 using Technical_Assessment_ElectroPi.Infrastructure.Contexts;
 using Technical_Assessment_ElectroPi.Infrastructure.Repositories;
 using Technical_Assessment_ElectroPi.Infrastructure.UnitOfWork;
-
+using Technical_Assessment_ElectroPi.API.Middleware;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigins", policy =>
     {
-        policy.WithOrigins("http://localhost:4200") // Allow the frontend origin
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        policy
+            .WithOrigins("http://localhost:4200")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
     });
 });
 
@@ -66,6 +68,7 @@ builder.Services.AddSwaggerGen(c =>
             new string[] {}
         }
     });
+
 });
 
 builder.Services.AddDbContext<TechnicalAssessmentDbContext>(options =>
@@ -98,6 +101,10 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
+    // ================================
+    // EXISTING CODE - DON'T CHANGE
+    // ================================
+
     options.RequireHttpsMetadata = false;
     options.SaveToken = true;
 
@@ -118,6 +125,30 @@ builder.Services.AddAuthentication(options =>
             IssuerSigningKey =
                 new SymmetricSecurityKey(key)
         };
+
+    // ================================
+    // NEW CODE - FOR SIGNALR ONLY
+    // ================================
+
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken =
+                context.Request.Query["access_token"];
+
+            var path =
+                context.HttpContext.Request.Path;
+
+            if (!string.IsNullOrEmpty(accessToken) &&
+                path.StartsWithSegments("/hubs/notifications"))
+            {
+                context.Token = accessToken;
+            }
+
+            return Task.CompletedTask;
+        }
+    };
 });
 
 // Repositories
@@ -153,11 +184,18 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITicketActivityRepository, TicketActivityRepository>();
 builder.Services.AddScoped<ITicketCommentRepository, TicketCommentRepository>();
 builder.Services.AddScoped<ITimeEntryRepository, TimeEntryRepository>();
+builder.Services.AddScoped<
+    INotificationService,
+    NotificationService>();
 
+builder.Services.AddScoped<
+    INotificationRepository,
+    NotificationRepository>();
+builder.Services.AddSignalR();
 
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 var app = builder.Build();
-
+app.UseGlobalExceptionHandling();
 app.UseCors("AllowSpecificOrigins");
 
 // Configure the HTTP request pipeline.
@@ -171,7 +209,8 @@ app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
-
+app.MapHub<NotificationHub>(
+    "/hubs/notifications");
 app.UseStaticFiles();
 
 app.MapControllers();

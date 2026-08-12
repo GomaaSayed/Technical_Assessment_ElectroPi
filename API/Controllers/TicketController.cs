@@ -28,6 +28,7 @@ public class TicketController : ControllerBase
     // --------------------------------------------------
 
     [HttpGet("{id:guid}")]
+    [Authorize(Roles = "Admin,SupportAgent,Customer")]
     public async Task<IActionResult> GetById(
         Guid id,
         CancellationToken cancellationToken)
@@ -44,14 +45,10 @@ public class TicketController : ControllerBase
 
     // --------------------------------------------------
     // Get All Tickets
-    // Supports:
-    // Search
-    // Filtering
-    // Sorting
-    // Pagination
     // --------------------------------------------------
 
     [HttpGet]
+    [Authorize(Roles = "Admin,SupportAgent,Customer")]
     public async Task<IActionResult> GetAll(
         [FromQuery] TicketQueryDto query,
         CancellationToken cancellationToken)
@@ -62,11 +59,16 @@ public class TicketController : ControllerBase
 
         return Ok(result);
     }
+
+    // --------------------------------------------------
+    // Get Customer Tickets
+    // --------------------------------------------------
+
     [HttpGet("customer-tickets")]
     [Authorize(Roles = "Customer")]
     public async Task<IActionResult> GetCustomerTickets(
-    [FromQuery] TicketQueryDto query,
-    CancellationToken cancellationToken)
+        [FromQuery] TicketQueryDto query,
+        CancellationToken cancellationToken)
     {
         var result = await _ticketService.GetCustomerTicketsAsync(
             query,
@@ -74,11 +76,16 @@ public class TicketController : ControllerBase
 
         return Ok(result);
     }
+
+    // --------------------------------------------------
+    // Get My Tickets
+    // --------------------------------------------------
+
     [HttpGet("my-tickets")]
     [Authorize(Roles = "SupportAgent")]
     public async Task<IActionResult> GetMyTickets(
-    [FromQuery] TicketQueryDto query,
-    CancellationToken cancellationToken)
+        [FromQuery] TicketQueryDto query,
+        CancellationToken cancellationToken)
     {
         var result = await _ticketService.GetMyTicketsAsync(
             query,
@@ -86,6 +93,7 @@ public class TicketController : ControllerBase
 
         return Ok(result);
     }
+
     // --------------------------------------------------
     // Create Ticket
     // --------------------------------------------------
@@ -273,6 +281,7 @@ public class TicketController : ControllerBase
 
         return NoContent();
     }
+
     // --------------------------------------------------
     // Get Comments
     // --------------------------------------------------
@@ -289,6 +298,7 @@ public class TicketController : ControllerBase
 
         return Ok(comments);
     }
+
     // --------------------------------------------------
     // Get Time Entries
     // --------------------------------------------------

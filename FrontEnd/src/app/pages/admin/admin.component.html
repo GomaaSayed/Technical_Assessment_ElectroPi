@@ -514,22 +514,6 @@
                         </div>
                       </div>
 
-                      <!-- ========================= -->
-                      <!-- No Comments -->
-                      <!-- ========================= -->
-
-                      <div
-                        *ngIf="
-                          !loadingComments[ticket.id] &&
-                          getComments(ticket.id).length === 0
-                        "
-                        class="text-muted text-center py-3"
-                      >
-                        <i class="bi bi-chat fs-4 d-block mb-2"></i>
-
-                        No comments yet.
-                      </div>
-
                       <hr />
 
                       <!-- ========================= -->

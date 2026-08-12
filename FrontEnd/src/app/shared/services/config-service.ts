@@ -4,6 +4,7 @@ import { Observable, shareReplay } from 'rxjs';
 
 export interface AppConfig {
   baseUrl: string;
+  notificationHubUrl: string;
 }
 
 @Injectable({

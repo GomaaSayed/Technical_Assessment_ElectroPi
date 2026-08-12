@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Technical_Assessment_ElectroPi.Infrastructure.Contexts;
 
@@ -11,9 +12,11 @@ using Technical_Assessment_ElectroPi.Infrastructure.Contexts;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(TechnicalAssessmentDbContext))]
-    partial class TechnicalAssessmentDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260812163843_CreateNotificationTable")]
+    partial class CreateNotificationTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
