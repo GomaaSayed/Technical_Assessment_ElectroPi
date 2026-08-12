@@ -1,0 +1,190 @@
+<div class="login-page">
+  <div class="login-card">
+    <!-- Logo / Header -->
+    <div class="text-center mb-4">
+      <div class="login-icon">
+        <i class="bi bi-headset"></i>
+      </div>
+
+      <h2 class="fw-bold mb-1">SupportDesk</h2>
+      <p class="text-muted mb-0">Support Ticket Management System</p>
+    </div>
+
+    <!-- Login Form -->
+    <form [formGroup]="loginForm" (ngSubmit)="login()">
+      <!-- Username -->
+      <div class="mb-3">
+        <label for="username" class="form-label"> Username </label>
+
+        <div class="input-group">
+          <span class="input-group-text">
+            <i class="bi bi-person"></i>
+          </span>
+
+          <input
+            id="username"
+            type="text"
+            class="form-control"
+            formControlName="username"
+            placeholder="Enter username"
+          />
+        </div>
+
+        <div
+          class="text-danger mt-1"
+          *ngIf="username?.touched && username?.invalid"
+        >
+          <small *ngIf="username?.errors?.['required']">
+            Username is required.
+          </small>
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="mb-3">
+        <label for="password" class="form-label"> Password </label>
+
+        <div class="input-group">
+          <span class="input-group-text">
+            <i class="bi bi-lock"></i>
+          </span>
+
+          <input
+            id="password"
+            type="password"
+            class="form-control"
+            formControlName="password"
+            placeholder="Enter password"
+          />
+        </div>
+
+        <div
+          class="text-danger mt-1"
+          *ngIf="password?.touched && password?.invalid"
+        >
+          <small *ngIf="password?.errors?.['required']">
+            Password is required.
+          </small>
+        </div>
+      </div>
+
+      <!-- Error -->
+      <div *ngIf="errorMessage" class="alert alert-danger py-2">
+        <i class="bi bi-exclamation-circle me-1"></i>
+        {{ errorMessage }}
+      </div>
+
+      <!-- Login -->
+      <button
+        type="submit"
+        class="btn btn-primary w-100"
+        [disabled]="isSubmitting"
+      >
+        <span
+          *ngIf="isSubmitting"
+          class="spinner-border spinner-border-sm me-2"
+        ></span>
+
+        <i *ngIf="!isSubmitting" class="bi bi-box-arrow-in-right me-1"></i>
+
+        {{ isSubmitting ? "Signing in..." : "Sign In" }}
+      </button>
+    </form>
+
+    <!-- Demo Accounts -->
+    <div class="demo-accounts mt-4">
+      <div class="text-center mb-3">
+        <span class="text-muted small">
+          Technical Assessment Demo Accounts
+        </span>
+      </div>
+
+      <!-- Admin -->
+      <div class="demo-account">
+        <div class="account-icon admin">
+          <i class="bi bi-shield-check"></i>
+        </div>
+
+        <div class="account-info">
+          <div class="fw-semibold">Admin</div>
+
+          <div class="small text-muted">
+            Username:
+            <strong>admin</strong>
+          </div>
+
+          <div class="small text-muted">
+            Password:
+            <strong>Admin&#64;1234</strong>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-primary"
+          (click)="useDemoAccount('admin', 'Admin@1234')"
+        >
+          Use
+        </button>
+      </div>
+
+      <!-- Support Agent -->
+      <div class="demo-account">
+        <div class="account-icon agent">
+          <i class="bi bi-headset"></i>
+        </div>
+
+        <div class="account-info">
+          <div class="fw-semibold">Support Agent</div>
+
+          <div class="small text-muted">
+            Username:
+            <strong>supportagent</strong>
+          </div>
+
+          <div class="small text-muted">
+            Password:
+            <strong>Agent&#64;1234</strong>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-primary"
+          (click)="useDemoAccount('supportagent', 'Agent@1234')"
+        >
+          Use
+        </button>
+      </div>
+
+      <!-- Customer -->
+      <div class="demo-account">
+        <div class="account-icon customer">
+          <i class="bi bi-person"></i>
+        </div>
+
+        <div class="account-info">
+          <div class="fw-semibold">Customer</div>
+
+          <div class="small text-muted">
+            Username:
+            <strong>customer</strong>
+          </div>
+
+          <div class="small text-muted">
+            Password:
+            <strong>Customer&#64;1234</strong>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-primary"
+          (click)="useDemoAccount('customer', 'Customer@1234')"
+        >
+          Use
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

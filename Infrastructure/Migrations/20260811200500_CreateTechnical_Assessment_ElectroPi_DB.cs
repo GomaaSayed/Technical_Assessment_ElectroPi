@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class CreateDatabase : Migration
+    public partial class CreateTechnical_Assessment_ElectroPi_DB : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -252,12 +252,33 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.InsertData(
+                table: "Roles",
+                columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
+                values: new object[,]
+                {
+                    { "11111111-1111-1111-1111-111111111111", "admin-role-concurrency", "Admin", "ADMIN" },
+                    { "22222222-2222-2222-2222-222222222222", "support-agent-role-concurrency", "SupportAgent", "SUPPORTAGENT" },
+                    { "33333333-3333-3333-3333-333333333333", "customer-role-concurrency", "Customer", "CUSTOMER" }
+                });
+
+            migrationBuilder.InsertData(
                 table: "Users",
                 columns: new[] { "Id", "AccessFailedCount", "ConcurrencyStamp", "Email", "EmailConfirmed", "LockoutEnabled", "LockoutEnd", "NormalizedEmail", "NormalizedUserName", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "SecurityStamp", "TwoFactorEnabled", "UserName" },
                 values: new object[,]
                 {
-                    { "a3af605d-9232-4c85-856a-74155594c639", 0, "user_concurrency_stamp", "user@example.com", true, false, null, "USER@EXAMPLE.COM", "USER", "AQAAAAIAAYagAAAAEJ1wknwFR/9DeQ21vP2wAVj7qnHpVVvJKNje2hJrm1CGc/JtSxQaBlzdt+VxkpDJkg==", null, true, "user_security_stamp", false, "user" },
-                    { "f38089af-8ad8-4df8-aa9d-af8e476f7315", 0, "admin_concurrency_stamp", "admin@example.com", true, false, null, "ADMIN@EXAMPLE.COM", "ADMIN", "AQAAAAIAAYagAAAAEIDXznCCZMb2pEJi1lGGH2mPyzIHO+Kuu1RIJRrYSzxhOb/1J/36OUuGt380GjAp8Q==", null, true, "admin_security_stamp", false, "admin" }
+                    { "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", 0, "admin-concurrency-stamp", "admin@example.com", true, false, null, "ADMIN@EXAMPLE.COM", "ADMIN", "AQAAAAIAAYagAAAAEMX6f0mB3Y7ZsqSOxpPXiMTVZsLENXbgVYKmrbn2DfyB9PzbRNye8qlDAikGIOEc1A==", null, false, "admin-security-stamp", false, "admin" },
+                    { "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", 0, "support-agent-concurrency-stamp", "supportagent@example.com", true, false, null, "SUPPORTAGENT@EXAMPLE.COM", "SUPPORTAGENT", "AQAAAAIAAYagAAAAEJaf+zppST0Nuz01VJ1TBlpZB3ndidYaR6XisX3kaIe3Vsq11PkZWky/HRRBKbn4hw==", null, false, "support-agent-security-stamp", false, "supportagent" },
+                    { "cccccccc-cccc-cccc-cccc-cccccccccccc", 0, "customer-concurrency-stamp", "customer@example.com", true, false, null, "CUSTOMER@EXAMPLE.COM", "CUSTOMER", "AQAAAAIAAYagAAAAEEKLjOFPPn9+NToaGK4UZFmirZn92lgHHeHL+qwIWjRCah0ADm93JEQSabpTr6zHpw==", null, false, "customer-security-stamp", false, "customer" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "UserRoles",
+                columns: new[] { "RoleId", "UserId" },
+                values: new object[,]
+                {
+                    { "11111111-1111-1111-1111-111111111111", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" },
+                    { "22222222-2222-2222-2222-222222222222", "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb" },
+                    { "33333333-3333-3333-3333-333333333333", "cccccccc-cccc-cccc-cccc-cccccccccccc" }
                 });
 
             migrationBuilder.CreateIndex(

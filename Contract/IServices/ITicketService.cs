@@ -9,7 +9,12 @@ public interface ITicketService
     Task<TicketDto?> GetByIdAsync(
         Guid id,
         CancellationToken cancellationToken = default);
-
+    Task<PagedResultDto<TicketDto>> GetMyTicketsAsync(
+   TicketQueryDto query,
+   CancellationToken cancellationToken = default);
+    Task<PagedResultDto<TicketDto>> GetCustomerTicketsAsync(
+    TicketQueryDto query,
+    CancellationToken cancellationToken = default);
     Task<PagedResultDto<TicketDto>> GetAllAsync(
         TicketQueryDto query,
         CancellationToken cancellationToken = default);

@@ -47,6 +47,29 @@ namespace Infrastructure.Migrations
                         .HasFilter("[NormalizedName] IS NOT NULL");
 
                     b.ToTable("Roles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "11111111-1111-1111-1111-111111111111",
+                            ConcurrencyStamp = "admin-role-concurrency",
+                            Name = "Admin",
+                            NormalizedName = "ADMIN"
+                        },
+                        new
+                        {
+                            Id = "22222222-2222-2222-2222-222222222222",
+                            ConcurrencyStamp = "support-agent-role-concurrency",
+                            Name = "SupportAgent",
+                            NormalizedName = "SUPPORTAGENT"
+                        },
+                        new
+                        {
+                            Id = "33333333-3333-3333-3333-333333333333",
+                            ConcurrencyStamp = "customer-role-concurrency",
+                            Name = "Customer",
+                            NormalizedName = "CUSTOMER"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -134,6 +157,23 @@ namespace Infrastructure.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("UserRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            UserId = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+                            RoleId = "11111111-1111-1111-1111-111111111111"
+                        },
+                        new
+                        {
+                            UserId = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+                            RoleId = "22222222-2222-2222-2222-222222222222"
+                        },
+                        new
+                        {
+                            UserId = "cccccccc-cccc-cccc-cccc-cccccccccccc",
+                            RoleId = "33333333-3333-3333-3333-333333333333"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
@@ -400,35 +440,51 @@ namespace Infrastructure.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "f38089af-8ad8-4df8-aa9d-af8e476f7315",
+                            Id = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "admin_concurrency_stamp",
+                            ConcurrencyStamp = "admin-concurrency-stamp",
                             Email = "admin@example.com",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@EXAMPLE.COM",
                             NormalizedUserName = "ADMIN",
-                            PasswordHash = "AQAAAAIAAYagAAAAEIDXznCCZMb2pEJi1lGGH2mPyzIHO+Kuu1RIJRrYSzxhOb/1J/36OUuGt380GjAp8Q==",
-                            PhoneNumberConfirmed = true,
-                            SecurityStamp = "admin_security_stamp",
+                            PasswordHash = "AQAAAAIAAYagAAAAEMX6f0mB3Y7ZsqSOxpPXiMTVZsLENXbgVYKmrbn2DfyB9PzbRNye8qlDAikGIOEc1A==",
+                            PhoneNumberConfirmed = false,
+                            SecurityStamp = "admin-security-stamp",
                             TwoFactorEnabled = false,
                             UserName = "admin"
                         },
                         new
                         {
-                            Id = "a3af605d-9232-4c85-856a-74155594c639",
+                            Id = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "user_concurrency_stamp",
-                            Email = "user@example.com",
+                            ConcurrencyStamp = "support-agent-concurrency-stamp",
+                            Email = "supportagent@example.com",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
-                            NormalizedEmail = "USER@EXAMPLE.COM",
-                            NormalizedUserName = "USER",
-                            PasswordHash = "AQAAAAIAAYagAAAAEJ1wknwFR/9DeQ21vP2wAVj7qnHpVVvJKNje2hJrm1CGc/JtSxQaBlzdt+VxkpDJkg==",
-                            PhoneNumberConfirmed = true,
-                            SecurityStamp = "user_security_stamp",
+                            NormalizedEmail = "SUPPORTAGENT@EXAMPLE.COM",
+                            NormalizedUserName = "SUPPORTAGENT",
+                            PasswordHash = "AQAAAAIAAYagAAAAEJaf+zppST0Nuz01VJ1TBlpZB3ndidYaR6XisX3kaIe3Vsq11PkZWky/HRRBKbn4hw==",
+                            PhoneNumberConfirmed = false,
+                            SecurityStamp = "support-agent-security-stamp",
                             TwoFactorEnabled = false,
-                            UserName = "user"
+                            UserName = "supportagent"
+                        },
+                        new
+                        {
+                            Id = "cccccccc-cccc-cccc-cccc-cccccccccccc",
+                            AccessFailedCount = 0,
+                            ConcurrencyStamp = "customer-concurrency-stamp",
+                            Email = "customer@example.com",
+                            EmailConfirmed = true,
+                            LockoutEnabled = false,
+                            NormalizedEmail = "CUSTOMER@EXAMPLE.COM",
+                            NormalizedUserName = "CUSTOMER",
+                            PasswordHash = "AQAAAAIAAYagAAAAEEKLjOFPPn9+NToaGK4UZFmirZn92lgHHeHL+qwIWjRCah0ADm93JEQSabpTr6zHpw==",
+                            PhoneNumberConfirmed = false,
+                            SecurityStamp = "customer-security-stamp",
+                            TwoFactorEnabled = false,
+                            UserName = "customer"
                         });
                 });
 

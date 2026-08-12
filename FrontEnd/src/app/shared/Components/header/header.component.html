@@ -1,0 +1,236 @@
+<nav
+  class="navbar navbar-expand-lg navbar-dark shadow-sm"
+  [ngClass]="{
+    'bg-danger': isAdmin(),
+    'bg-primary': isCustomer(),
+    'bg-success': isSupportAgent(),
+  }"
+>
+  <div class="container-fluid px-4">
+    <!-- Brand -->
+    <a
+      class="navbar-brand fw-bold d-flex align-items-center"
+      [routerLink]="
+        isAdmin() ? '/admin' : isSupportAgent() ? '/supportagent' : '/customer'
+      "
+    >
+      <i
+        class="bi me-2"
+        [ngClass]="{
+          'bi-person': isCustomer(),
+          'bi-headset': isSupportAgent(),
+          'bi-shield-check': isAdmin(),
+        }"
+      ></i>
+
+      SupportDesk
+    </a>
+
+    <!-- Mobile Toggle -->
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navbarNav"
+      aria-controls="navbarNav"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <!-- Navigation -->
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <!-- Left Side -->
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <!-- Customer -->
+        <li class="nav-item" *ngIf="isCustomer()">
+          <a class="nav-link" routerLink="/customer" routerLinkActive="active">
+            <i class="bi bi-ticket-detailed me-1"></i>
+            My Tickets
+          </a>
+        </li>
+
+        <!-- Support Agent -->
+        <li class="nav-item" *ngIf="isSupportAgent()">
+          <a class="nav-link" routerLink="/agent" routerLinkActive="active">
+            <i class="bi bi-headset me-1"></i>
+            Support Tickets
+          </a>
+        </li>
+
+        <!-- Admin -->
+        <li class="nav-item" *ngIf="isAdmin()">
+          <a class="nav-link" routerLink="/admin" routerLinkActive="active">
+            <i class="bi bi-speedometer2 me-1"></i>
+            Dashboard
+          </a>
+        </li>
+      </ul>
+
+      <!-- Right Side -->
+      <div class="d-flex align-items-center gap-3">
+        <!-- Notifications -->
+        <div class="dropdown" *ngIf="role">
+          <button
+            class="btn btn-link text-white position-relative p-0 border-0"
+            type="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+            title="Notifications"
+          >
+            <i class="bi bi-bell fs-5"></i>
+
+            <!-- Unread Badge -->
+            <span
+              *ngIf="unreadCount > 0"
+              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark"
+            >
+              {{ unreadCount > 99 ? "99+" : unreadCount }}
+            </span>
+          </button>
+
+          <!-- Notification Dropdown -->
+          <ul class="dropdown-menu dropdown-menu-end shadow notification-menu">
+            <!-- Header -->
+            <li>
+              <div
+                class="dropdown-header d-flex justify-content-between align-items-center"
+              >
+                <strong>
+                  {{
+                    isAdmin()
+                      ? "Admin Notifications"
+                      : isSupportAgent()
+                        ? "Support Notifications"
+                        : "My Notifications"
+                  }}
+                </strong>
+
+                <button
+                  *ngIf="unreadCount > 0"
+                  type="button"
+                  class="btn btn-sm btn-link text-decoration-none"
+                  (click)="markAllAsRead()"
+                >
+                  Mark all as read
+                </button>
+              </div>
+            </li>
+
+            <li>
+              <hr class="dropdown-divider" />
+            </li>
+
+            <!-- Notifications -->
+            <ng-container
+              *ngIf="notifications.length > 0; else noNotifications"
+            >
+              <li
+                *ngFor="let notification of notifications"
+                class="notification-item"
+                [class.unread]="!notification.isRead"
+              >
+                <a
+                  href="javascript:void(0)"
+                  class="dropdown-item py-3"
+                  (click)="markAsRead(notification)"
+                >
+                  <div class="d-flex">
+                    <!-- Icon -->
+                    <div class="me-3">
+                      <span
+                        class="notification-icon"
+                        [ngClass]="getNotificationClass(notification.type)"
+                      >
+                        <i
+                          class="bi"
+                          [ngClass]="getNotificationIcon(notification.type)"
+                        ></i>
+                      </span>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="flex-grow-1">
+                      <div class="fw-semibold">
+                        {{ notification.title }}
+                      </div>
+
+                      <div class="small text-muted">
+                        {{ notification.message }}
+                      </div>
+
+                      <div class="small text-secondary mt-1">
+                        {{ notification.createdAt | date: "short" }}
+                      </div>
+                    </div>
+
+                    <!-- Unread Indicator -->
+                    <span
+                      *ngIf="!notification.isRead"
+                      class="unread-dot"
+                    ></span>
+                  </div>
+                </a>
+              </li>
+            </ng-container>
+
+            <!-- Empty -->
+            <ng-template #noNotifications>
+              <li>
+                <div class="text-center text-muted py-4">
+                  <i class="bi bi-bell-slash fs-3 d-block mb-2"></i>
+
+                  <span> No notifications </span>
+                </div>
+              </li>
+            </ng-template>
+
+            <li>
+              <hr class="dropdown-divider" />
+            </li>
+
+            <!-- View All -->
+            <li>
+              <a
+                class="dropdown-item text-center fw-semibold"
+                [ngClass]="{
+                  'text-primary': isCustomer(),
+                  'text-dark': isSupportAgent(),
+                  'text-danger': isAdmin(),
+                }"
+                routerLink="/notifications"
+              >
+                View all notifications
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Role -->
+        <span class="text-white">
+          <i
+            class="bi me-1"
+            [ngClass]="{
+              'bi-person-circle': isCustomer(),
+              'bi-headset': isSupportAgent(),
+              'bi-shield-check': isAdmin(),
+            }"
+          ></i>
+
+          {{ role }}
+        </span>
+
+        <!-- Logout -->
+        <button
+          type="button"
+          class="btn btn-outline-light btn-sm"
+          (click)="logout()"
+        >
+          <i class="bi bi-box-arrow-right me-1"></i>
+          Logout
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>

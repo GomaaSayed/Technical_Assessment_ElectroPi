@@ -62,7 +62,30 @@ public class TicketController : ControllerBase
 
         return Ok(result);
     }
+    [HttpGet("customer-tickets")]
+    [Authorize(Roles = "Customer")]
+    public async Task<IActionResult> GetCustomerTickets(
+    [FromQuery] TicketQueryDto query,
+    CancellationToken cancellationToken)
+    {
+        var result = await _ticketService.GetCustomerTicketsAsync(
+            query,
+            cancellationToken);
 
+        return Ok(result);
+    }
+    [HttpGet("my-tickets")]
+    [Authorize(Roles = "SupportAgent")]
+    public async Task<IActionResult> GetMyTickets(
+    [FromQuery] TicketQueryDto query,
+    CancellationToken cancellationToken)
+    {
+        var result = await _ticketService.GetMyTicketsAsync(
+            query,
+            cancellationToken);
+
+        return Ok(result);
+    }
     // --------------------------------------------------
     // Create Ticket
     // --------------------------------------------------

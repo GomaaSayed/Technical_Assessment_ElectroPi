@@ -120,6 +120,174 @@ public class TicketService : ITicketService
         };
     }
 
+    public async Task<PagedResultDto<TicketDto>> GetCustomerTicketsAsync(
+     TicketQueryDto query,
+     CancellationToken cancellationToken = default)
+    {
+        var customerId = _currentUser.UserId
+            ?? throw new UnauthorizedAccessException();
+
+        var tickets = await _ticketRepository.GetAllAsync(
+            cancellationToken);
+
+        // Only tickets created by the current customer
+        IEnumerable<Ticket> filteredTickets = tickets
+            .Where(x => x.CustomerId == customerId);
+
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+            var search = query.Search.Trim();
+
+            filteredTickets = filteredTickets.Where(x =>
+                x.TicketNumber.Contains(
+                    search,
+                    StringComparison.OrdinalIgnoreCase) ||
+                x.Title.Contains(
+                    search,
+                    StringComparison.OrdinalIgnoreCase) ||
+                x.Description.Contains(
+                    search,
+                    StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (query.Status.HasValue)
+        {
+            filteredTickets = filteredTickets.Where(
+                x => x.Status == query.Status.Value);
+        }
+
+        if (query.Priority.HasValue)
+        {
+            filteredTickets = filteredTickets.Where(
+                x => x.Priority == query.Priority.Value);
+        }
+
+        filteredTickets = query.SortBy?.ToLowerInvariant() switch
+        {
+            "title" => query.Descending
+                ? filteredTickets.OrderByDescending(x => x.Title)
+                : filteredTickets.OrderBy(x => x.Title),
+
+            "priority" => query.Descending
+                ? filteredTickets.OrderByDescending(x => x.Priority)
+                : filteredTickets.OrderBy(x => x.Priority),
+
+            "status" => query.Descending
+                ? filteredTickets.OrderByDescending(x => x.Status)
+                : filteredTickets.OrderBy(x => x.Status),
+
+            "createdat" => query.Descending
+                ? filteredTickets.OrderByDescending(x => x.CreatedAt)
+                : filteredTickets.OrderBy(x => x.CreatedAt),
+
+            "ticketnumber" => query.Descending
+                ? filteredTickets.OrderByDescending(x => x.TicketNumber)
+                : filteredTickets.OrderBy(x => x.TicketNumber),
+
+            _ => filteredTickets.OrderByDescending(x => x.CreatedAt)
+        };
+
+        var totalCount = filteredTickets.Count();
+
+        var pageNumber = Math.Max(1, query.PageNumber);
+        var pageSize = Math.Clamp(query.PageSize, 1, 100);
+
+        var items = filteredTickets
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .Select(MapToDto)
+            .ToList();
+
+        return new PagedResultDto<TicketDto>
+        {
+            Items = items,
+            PageNumber = pageNumber,
+            PageSize = pageSize,
+            TotalCount = totalCount
+        };
+    }
+    public async Task<PagedResultDto<TicketDto>> GetMyTicketsAsync(
+    TicketQueryDto query,
+    CancellationToken cancellationToken = default)
+    {
+        var agentId = _currentUser.UserId
+            ?? throw new UnauthorizedAccessException();
+
+        var tickets = await _ticketRepository.GetAllAsync(
+            cancellationToken);
+
+        // Only tickets assigned to the current support agent
+        IEnumerable<Ticket> filteredTickets = tickets
+            .Where(x => x.AssignedAgentId == agentId);
+
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+            var search = query.Search.Trim();
+
+            filteredTickets = filteredTickets.Where(x =>
+                x.TicketNumber.Contains(
+                    search,
+                    StringComparison.OrdinalIgnoreCase) ||
+                x.Title.Contains(
+                    search,
+                    StringComparison.OrdinalIgnoreCase) ||
+                x.Description.Contains(
+                    search,
+                    StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (query.Status.HasValue)
+        {
+            filteredTickets = filteredTickets.Where(
+                x => x.Status == query.Status.Value);
+        }
+
+        if (query.Priority.HasValue)
+        {
+            filteredTickets = filteredTickets.Where(
+                x => x.Priority == query.Priority.Value);
+        }
+
+        filteredTickets = query.SortBy?.ToLowerInvariant() switch
+        {
+            "title" => query.Descending
+                ? filteredTickets.OrderByDescending(x => x.Title)
+                : filteredTickets.OrderBy(x => x.Title),
+
+            "priority" => query.Descending
+                ? filteredTickets.OrderByDescending(x => x.Priority)
+                : filteredTickets.OrderBy(x => x.Priority),
+
+            "status" => query.Descending
+                ? filteredTickets.OrderByDescending(x => x.Status)
+                : filteredTickets.OrderBy(x => x.Status),
+
+            "createdat" => query.Descending
+                ? filteredTickets.OrderByDescending(x => x.CreatedAt)
+                : filteredTickets.OrderBy(x => x.CreatedAt),
+
+            _ => filteredTickets.OrderByDescending(x => x.CreatedAt)
+        };
+
+        var totalCount = filteredTickets.Count();
+
+        var pageNumber = Math.Max(1, query.PageNumber);
+        var pageSize = Math.Clamp(query.PageSize, 1, 100);
+
+        var items = filteredTickets
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .Select(MapToDto)
+            .ToList();
+
+        return new PagedResultDto<TicketDto>
+        {
+            Items = items,
+            PageNumber = pageNumber,
+            PageSize = pageSize,
+            TotalCount = totalCount
+        };
+    }
     public async Task<TicketDto> CreateAsync(
         CreateTicketDto request,
         CancellationToken cancellationToken = default)

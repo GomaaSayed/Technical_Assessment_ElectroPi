@@ -1,0 +1,198 @@
+<div class="container mt-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="mb-1">Support Tickets</h3>
+      <p class="text-muted mb-0">Manage and resolve customer support tickets</p>
+    </div>
+
+    <button
+      class="btn btn-outline-primary"
+      (click)="loadTickets()"
+      [disabled]="isLoading"
+    >
+      <span
+        *ngIf="isLoading"
+        class="spinner-border spinner-border-sm me-1"
+      ></span>
+
+      Refresh
+    </button>
+  </div>
+
+  <!-- Filters -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <div class="row g-3">
+        <!-- Search -->
+        <div class="col-md-4">
+          <label class="form-label">Search</label>
+
+          <input
+            type="text"
+            class="form-control"
+            [(ngModel)]="search"
+            placeholder="Search tickets..."
+            (keyup.enter)="searchTickets()"
+          />
+        </div>
+
+        <!-- Status -->
+        <div class="col-md-3">
+          <label class="form-label">Status</label>
+
+          <select class="form-select" [(ngModel)]="selectedStatus">
+            <option [ngValue]="undefined">All Statuses</option>
+
+            <option *ngFor="let status of statuses" [ngValue]="status.value">
+              {{ status.label }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Priority -->
+        <div class="col-md-3">
+          <label class="form-label">Priority</label>
+
+          <select class="form-select" [(ngModel)]="selectedPriority">
+            <option [ngValue]="undefined">All Priorities</option>
+
+            <option
+              *ngFor="let priority of priorities"
+              [ngValue]="priority.value"
+            >
+              {{ priority.label }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Buttons -->
+        <div class="col-md-2 d-flex align-items-end gap-2">
+          <button class="btn btn-primary" (click)="searchTickets()">
+            Search
+          </button>
+
+          <button class="btn btn-outline-secondary" (click)="clearFilters()">
+            Clear
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-primary"></div>
+
+    <p class="mt-2 text-muted">Loading tickets...</p>
+  </div>
+
+  <!-- Empty -->
+  <div *ngIf="!isLoading && tickets.length === 0" class="card shadow-sm">
+    <div class="card-body text-center py-5">
+      <h5>No tickets found</h5>
+
+      <p class="text-muted mb-0">There are no tickets matching your filters.</p>
+    </div>
+  </div>
+
+  <!-- Tickets -->
+  <div *ngIf="!isLoading && tickets.length > 0" class="card shadow-sm">
+    <div class="card-header">
+      <h5 class="mb-0">Tickets</h5>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Description</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Assigned Agent</th>
+            <th>Created At</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let ticket of tickets">
+            <!-- Title -->
+            <td>
+              <strong>
+                {{ ticket.title }}
+              </strong>
+            </td>
+
+            <!-- Description -->
+            <td>
+              <span>
+                {{ ticket.description }}
+              </span>
+            </td>
+
+            <!-- Priority -->
+            <td>
+              <select
+                class="form-select form-select-sm"
+                [ngModel]="ticket.priority"
+                (ngModelChange)="updatePriority(ticket, $event)"
+              >
+                <option
+                  *ngFor="let priority of priorities"
+                  [ngValue]="priority.value"
+                >
+                  {{ priority.label }}
+                </option>
+              </select>
+            </td>
+
+            <!-- Status -->
+            <td>
+              <select
+                class="form-select form-select-sm"
+                [ngModel]="ticket.status"
+                (ngModelChange)="updateStatus(ticket, $event)"
+              >
+                <option
+                  *ngFor="let status of statuses"
+                  [ngValue]="status.value"
+                >
+                  {{ status.label }}
+                </option>
+              </select>
+            </td>
+
+            <!-- Assigned Agent -->
+            <td>
+              <span *ngIf="ticket.assignedAgentId" class="badge bg-success">
+                Assigned
+              </span>
+
+              <span *ngIf="!ticket.assignedAgentId" class="badge bg-secondary">
+                Unassigned
+              </span>
+            </td>
+
+            <!-- Created At -->
+            <td>
+              {{ ticket.createdAt | date: "medium" }}
+            </td>
+
+            <!-- Actions -->
+            <td>
+              <button
+                *ngIf="ticket.assignedAgentId"
+                class="btn btn-sm btn-outline-danger"
+                (click)="unassignTicket(ticket)"
+              >
+                Unassign
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
