@@ -1,0 +1,225 @@
+<div class="dashboard-container">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <div>
+      <div class="dashboard-title">
+        <i class="bi bi-speedometer2"></i>
+        <div>
+          <h2>Admin Dashboard</h2>
+          <p>Monitor your support desk performance</p>
+        </div>
+      </div>
+    </div>
+
+    <button
+      type="button"
+      class="refresh-btn"
+      (click)="loadDashboard()"
+      [disabled]="isLoading"
+    >
+      <i
+        class="bi"
+        [ngClass]="
+          isLoading ? 'bi-arrow-repeat spinning' : 'bi-arrow-clockwise'
+        "
+      ></i>
+
+      Refresh
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="isLoading" class="dashboard-state">
+    <div class="spinner-border text-danger"></div>
+
+    <p>Loading dashboard...</p>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="!isLoading && errorMessage" class="error-state">
+    <i class="bi bi-exclamation-triangle"></i>
+
+    <div>
+      <strong>Unable to load dashboard</strong>
+      <p>{{ errorMessage }}</p>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <ng-container *ngIf="!isLoading && !errorMessage && dashboard">
+    <!-- Main Statistics -->
+    <div class="stats-grid">
+      <!-- Total -->
+      <div class="stat-card total">
+        <div class="stat-content">
+          <span class="stat-label"> Total Tickets </span>
+
+          <span class="stat-value">
+            {{ dashboard.totalTickets }}
+          </span>
+        </div>
+
+        <div class="stat-icon">
+          <i class="bi bi-ticket-detailed"></i>
+        </div>
+      </div>
+
+      <!-- Open -->
+      <div class="stat-card open">
+        <div class="stat-content">
+          <span class="stat-label"> Open </span>
+
+          <span class="stat-value">
+            {{ dashboard.openTickets }}
+          </span>
+        </div>
+
+        <div class="stat-icon">
+          <i class="bi bi-folder2-open"></i>
+        </div>
+      </div>
+
+      <!-- In Progress -->
+      <div class="stat-card progress">
+        <div class="stat-content">
+          <span class="stat-label"> In Progress </span>
+
+          <span class="stat-value">
+            {{ dashboard.inProgressTickets }}
+          </span>
+        </div>
+
+        <div class="stat-icon">
+          <i class="bi bi-arrow-repeat"></i>
+        </div>
+      </div>
+
+      <!-- Resolved -->
+      <div class="stat-card resolved">
+        <div class="stat-content">
+          <span class="stat-label"> Resolved </span>
+
+          <span class="stat-value">
+            {{ dashboard.resolvedTickets }}
+          </span>
+        </div>
+
+        <div class="stat-icon">
+          <i class="bi bi-check-circle"></i>
+        </div>
+      </div>
+
+      <!-- Closed -->
+      <div class="stat-card closed">
+        <div class="stat-content">
+          <span class="stat-label"> Closed </span>
+
+          <span class="stat-value">
+            {{ dashboard.closedTickets }}
+          </span>
+        </div>
+
+        <div class="stat-icon">
+          <i class="bi bi-lock"></i>
+        </div>
+      </div>
+
+      <!-- Critical -->
+      <div class="stat-card critical">
+        <div class="stat-content">
+          <span class="stat-label"> Critical Tickets </span>
+
+          <span class="stat-value">
+            {{ dashboard.openCriticalTickets }}
+          </span>
+        </div>
+
+        <div class="stat-icon">
+          <i class="bi bi-exclamation-triangle"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Performance Section -->
+    <div class="dashboard-grid">
+      <!-- Average Resolution -->
+      <div class="dashboard-card resolution-card">
+        <div class="card-header">
+          <div>
+            <span class="section-label"> PERFORMANCE </span>
+
+            <h3>Average Resolution Time</h3>
+          </div>
+
+          <div class="header-icon">
+            <i class="bi bi-clock-history"></i>
+          </div>
+        </div>
+
+        <div class="resolution-value">
+          {{ dashboard.averageResolutionTimeInMinutes | number: "1.0-0" }}
+
+          <span>minutes</span>
+        </div>
+
+        <div class="resolution-info">
+          <i class="bi bi-info-circle"></i>
+
+          Average time required to resolve a ticket.
+        </div>
+      </div>
+
+      <!-- Agent Workload -->
+      <div class="dashboard-card workload-card">
+        <div class="card-header">
+          <div>
+            <span class="section-label"> TEAM </span>
+
+            <h3>Agent Workload</h3>
+          </div>
+
+          <div class="header-icon">
+            <i class="bi bi-people"></i>
+          </div>
+        </div>
+
+        <div
+          *ngIf="dashboard.agentWorkloads?.length > 0; else noAgents"
+          class="workload-list"
+        >
+          <div class="agent-row" *ngFor="let agent of dashboard.agentWorkloads">
+            <div class="agent-info">
+              <div class="agent-avatar">
+                <i class="bi bi-person"></i>
+              </div>
+
+              <div>
+                <span class="agent-name"> Support Agent </span>
+
+                <span class="agent-id">
+                  {{ agent.agentId }}
+                </span>
+              </div>
+            </div>
+
+            <div class="ticket-count">
+              <strong>
+                {{ agent.assignedTickets }}
+              </strong>
+
+              <span> tickets </span>
+            </div>
+          </div>
+        </div>
+
+        <ng-template #noAgents>
+          <div class="empty-workload">
+            <i class="bi bi-people"></i>
+
+            <p>No assigned tickets</p>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+  </ng-container>
+</div>

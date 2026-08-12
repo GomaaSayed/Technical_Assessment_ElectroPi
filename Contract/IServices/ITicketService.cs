@@ -64,4 +64,10 @@ public interface ITicketService
         Guid ticketId,
         LogTimeEntryDto request,
         CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<TicketCommentDto>> GetCommentsAsync(
+    Guid ticketId,
+    CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<LogTimeEntryDto>> GetTimeEntriesAsync(
+    Guid ticketId,
+    CancellationToken cancellationToken = default);
 }

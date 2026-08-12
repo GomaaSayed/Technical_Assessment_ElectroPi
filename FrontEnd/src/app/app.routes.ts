@@ -27,11 +27,22 @@ export const routes: Routes = [
       ),
   },
 
+  // Admin
   {
     path: 'admin',
     canActivate: [authGuard, roleGuard(['Admin'])],
     loadComponent: () =>
       import('./pages/admin/admin.component').then((m) => m.AdminComponent),
+  },
+
+  // Admin Dashboard
+  {
+    path: 'admin/dashboard',
+    canActivate: [authGuard, roleGuard(['Admin'])],
+    loadComponent: () =>
+      import('./pages/dashboard/dashboard.component').then(
+        (m) => m.DashboardComponent,
+      ),
   },
 
   {

@@ -1,198 +1,892 @@
 <div class="container mt-4">
-  <!-- Header -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h3 class="mb-1">Support Tickets</h3>
-      <p class="text-muted mb-0">Manage and resolve customer support tickets</p>
+  <!-- ========================= -->
+  <!-- Page Header -->
+  <!-- ========================= -->
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body d-flex justify-content-between align-items-center">
+      <div>
+        <h4 class="mb-1">
+          <i class="bi bi-headset me-2"></i>
+          Support Agent
+        </h4>
+
+        <p class="text-muted mb-0">
+          Manage and resolve your assigned support tickets.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        class="btn btn-outline-primary"
+        (click)="refresh()"
+        [disabled]="isLoadingTickets"
+      >
+        <i class="bi bi-arrow-clockwise me-1"></i>
+        {{ isLoadingTickets ? "Loading..." : "Refresh" }}
+      </button>
     </div>
-
-    <button
-      class="btn btn-outline-primary"
-      (click)="loadTickets()"
-      [disabled]="isLoading"
-    >
-      <span
-        *ngIf="isLoading"
-        class="spinner-border spinner-border-sm me-1"
-      ></span>
-
-      Refresh
-    </button>
   </div>
 
+  <!-- ========================= -->
+  <!-- Messages -->
+  <!-- ========================= -->
+
+  <div
+    *ngIf="successMessage"
+    class="alert alert-success alert-dismissible fade show"
+  >
+    <i class="bi bi-check-circle me-2"></i>
+
+    {{ successMessage }}
+
+    <button
+      type="button"
+      class="btn-close"
+      (click)="successMessage = ''"
+    ></button>
+  </div>
+
+  <div
+    *ngIf="errorMessage"
+    class="alert alert-danger alert-dismissible fade show"
+  >
+    <i class="bi bi-exclamation-circle me-2"></i>
+
+    {{ errorMessage }}
+
+    <button
+      type="button"
+      class="btn-close"
+      (click)="errorMessage = ''"
+    ></button>
+  </div>
+
+  <!-- ========================= -->
   <!-- Filters -->
+  <!-- ========================= -->
+
   <div class="card shadow-sm mb-4">
+    <div class="card-header">
+      <h5 class="mb-0">
+        <i class="bi bi-funnel me-2"></i>
+        Ticket Filters
+      </h5>
+    </div>
+
     <div class="card-body">
-      <div class="row g-3">
-        <!-- Search -->
-        <div class="col-md-4">
-          <label class="form-label">Search</label>
+      <form [formGroup]="filterForm" (ngSubmit)="applyFilters()">
+        <div class="row g-3">
+          <!-- Search -->
+          <div class="col-md-6">
+            <label class="form-label"> Search </label>
 
-          <input
-            type="text"
-            class="form-control"
-            [(ngModel)]="search"
-            placeholder="Search tickets..."
-            (keyup.enter)="searchTickets()"
-          />
+            <input
+              type="text"
+              class="form-control"
+              formControlName="search"
+              placeholder="Search by ticket number, title or description..."
+            />
+          </div>
+
+          <!-- Status -->
+          <div class="col-md-3">
+            <label class="form-label"> Status </label>
+
+            <select class="form-select" formControlName="status">
+              <option [ngValue]="null">All Statuses</option>
+
+              <option *ngFor="let item of statuses" [ngValue]="item.value">
+                {{ item.label }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Priority -->
+          <div class="col-md-3">
+            <label class="form-label"> Priority </label>
+
+            <select class="form-select" formControlName="priority">
+              <option [ngValue]="null">All Priorities</option>
+
+              <option *ngFor="let item of priorities" [ngValue]="item.value">
+                {{ item.label }}
+              </option>
+            </select>
+          </div>
         </div>
 
-        <!-- Status -->
-        <div class="col-md-3">
-          <label class="form-label">Status</label>
+        <!-- Filter Buttons -->
 
-          <select class="form-select" [(ngModel)]="selectedStatus">
-            <option [ngValue]="undefined">All Statuses</option>
-
-            <option *ngFor="let status of statuses" [ngValue]="status.value">
-              {{ status.label }}
-            </option>
-          </select>
-        </div>
-
-        <!-- Priority -->
-        <div class="col-md-3">
-          <label class="form-label">Priority</label>
-
-          <select class="form-select" [(ngModel)]="selectedPriority">
-            <option [ngValue]="undefined">All Priorities</option>
-
-            <option
-              *ngFor="let priority of priorities"
-              [ngValue]="priority.value"
-            >
-              {{ priority.label }}
-            </option>
-          </select>
-        </div>
-
-        <!-- Buttons -->
-        <div class="col-md-2 d-flex align-items-end gap-2">
-          <button class="btn btn-primary" (click)="searchTickets()">
-            Search
+        <div class="d-flex gap-2 mt-3">
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="isLoadingTickets"
+          >
+            <i class="bi bi-search me-1"></i>
+            Apply Filters
           </button>
 
-          <button class="btn btn-outline-secondary" (click)="clearFilters()">
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            (click)="clearFilters()"
+            [disabled]="isLoadingTickets"
+          >
+            <i class="bi bi-x-circle me-1"></i>
             Clear
           </button>
         </div>
-      </div>
+      </form>
     </div>
   </div>
 
-  <!-- Loading -->
-  <div *ngIf="isLoading" class="text-center py-5">
-    <div class="spinner-border text-primary"></div>
-
-    <p class="mt-2 text-muted">Loading tickets...</p>
-  </div>
-
-  <!-- Empty -->
-  <div *ngIf="!isLoading && tickets.length === 0" class="card shadow-sm">
-    <div class="card-body text-center py-5">
-      <h5>No tickets found</h5>
-
-      <p class="text-muted mb-0">There are no tickets matching your filters.</p>
-    </div>
-  </div>
-
+  <!-- ========================= -->
   <!-- Tickets -->
-  <div *ngIf="!isLoading && tickets.length > 0" class="card shadow-sm">
-    <div class="card-header">
-      <h5 class="mb-0">Tickets</h5>
+  <!-- ========================= -->
+
+  <div class="card shadow-sm">
+    <!-- Header -->
+
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">
+        <i class="bi bi-ticket-detailed me-2"></i>
+        My Assigned Tickets
+      </h5>
+
+      <span class="badge bg-primary"> {{ totalCount }} Tickets </span>
     </div>
 
-    <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Description</th>
-            <th>Priority</th>
-            <th>Status</th>
-            <th>Assigned Agent</th>
-            <th>Created At</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
+    <div class="card-body">
+      <!-- ========================= -->
+      <!-- Loading -->
+      <!-- ========================= -->
 
-        <tbody>
-          <tr *ngFor="let ticket of tickets">
-            <!-- Title -->
-            <td>
-              <strong>
-                {{ ticket.title }}
-              </strong>
-            </td>
+      <div *ngIf="isLoadingTickets" class="text-center py-5">
+        <div class="spinner-border text-primary"></div>
 
-            <!-- Description -->
-            <td>
-              <span>
-                {{ ticket.description }}
-              </span>
-            </td>
+        <p class="mt-3 text-muted mb-0">Loading assigned tickets...</p>
+      </div>
 
-            <!-- Priority -->
-            <td>
-              <select
-                class="form-select form-select-sm"
-                [ngModel]="ticket.priority"
-                (ngModelChange)="updatePriority(ticket, $event)"
+      <!-- ========================= -->
+      <!-- Empty -->
+      <!-- ========================= -->
+
+      <div
+        *ngIf="!isLoadingTickets && tickets.length === 0"
+        class="text-center text-muted py-5"
+      >
+        <i class="bi bi-ticket-perforated fs-1 d-block mb-3"></i>
+
+        <h5>No assigned tickets</h5>
+
+        <p class="mb-0">
+          You currently don't have any tickets assigned to you.
+        </p>
+      </div>
+
+      <!-- ========================= -->
+      <!-- Tickets Table -->
+      <!-- ========================= -->
+
+      <div
+        class="table-responsive"
+        *ngIf="!isLoadingTickets && tickets.length > 0"
+      >
+        <table class="table table-hover align-middle">
+          <!-- ========================= -->
+          <!-- Table Header -->
+          <!-- ========================= -->
+
+          <thead class="table-light">
+            <tr>
+              <!-- Title -->
+
+              <th class="sortable" (click)="sort('title')">
+                <div class="d-flex align-items-center gap-2">
+                  Title
+
+                  <i class="bi" [ngClass]="getSortIcon('title')"></i>
+                </div>
+              </th>
+
+              <!-- Customer -->
+
+              <th>Customer</th>
+
+              <!-- Description -->
+
+              <th>Description</th>
+
+              <!-- Priority -->
+
+              <th class="sortable" (click)="sort('priority')">
+                <div class="d-flex align-items-center gap-2">
+                  Priority
+
+                  <i class="bi" [ngClass]="getSortIcon('priority')"></i>
+                </div>
+              </th>
+
+              <!-- Status -->
+
+              <th class="sortable" (click)="sort('status')">
+                <div class="d-flex align-items-center gap-2">
+                  Status
+
+                  <i class="bi" [ngClass]="getSortIcon('status')"></i>
+                </div>
+              </th>
+
+              <!-- Created -->
+
+              <th class="sortable" (click)="sort('createdAt')">
+                <div class="d-flex align-items-center gap-2">
+                  Created At
+
+                  <i class="bi" [ngClass]="getSortIcon('createdAt')"></i>
+                </div>
+              </th>
+
+              <!-- Actions -->
+
+              <th>Actions</th>
+            </tr>
+          </thead>
+
+          <!-- ========================= -->
+          <!-- Table Body -->
+          <!-- ========================= -->
+
+          <tbody>
+            <ng-container *ngFor="let ticket of tickets">
+              <!-- ========================= -->
+              <!-- Ticket Row -->
+              <!-- ========================= -->
+
+              <tr>
+                <!-- Title -->
+
+                <td>
+                  <strong>
+                    {{ ticket.title }}
+                  </strong>
+
+                  <small class="d-block text-muted">
+                    {{ ticket.ticketNumber }}
+                  </small>
+                </td>
+
+                <!-- Customer -->
+
+                <td>
+                  <span class="badge bg-light text-dark">
+                    <i class="bi bi-person me-1"></i>
+
+                    {{ ticket.customerName || ticket.customerId }}
+                  </span>
+                </td>
+
+                <!-- Description -->
+
+                <td>
+                  <span class="text-muted">
+                    {{ ticket.description }}
+                  </span>
+                </td>
+
+                <!-- Priority -->
+
+                <td>
+                  <span
+                    class="badge"
+                    [ngClass]="getPriorityClass(ticket.priority)"
+                  >
+                    <i
+                      class="bi me-1"
+                      [ngClass]="{
+                        'bi-arrow-down-circle':
+                          ticket.priority === TicketPriority.Low,
+
+                        'bi-dash-circle':
+                          ticket.priority === TicketPriority.Medium,
+
+                        'bi-arrow-up-circle':
+                          ticket.priority === TicketPriority.High,
+                      }"
+                    ></i>
+
+                    {{ getPriorityLabel(ticket.priority) }}
+                  </span>
+                </td>
+
+                <!-- Status -->
+
+                <td>
+                  <select
+                    class="form-select form-select-sm"
+                    [ngModel]="ticket.status"
+                    (ngModelChange)="updateStatus(ticket, $event)"
+                    [disabled]="isUpdating(ticket)"
+                  >
+                    <option
+                      *ngFor="let item of statuses"
+                      [ngValue]="item.value"
+                    >
+                      {{ item.label }}
+                    </option>
+                  </select>
+                </td>
+
+                <!-- Created -->
+
+                <td>
+                  {{ ticket.createdAt | date: "medium" }}
+                </td>
+
+                <td>
+                  <div class="btn-group">
+                    <!-- Comment -->
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-primary"
+                      (click)="toggleCommentBox(ticket)"
+                      [disabled]="isCommenting(ticket)"
+                    >
+                      <i class="bi bi-chat-left-text me-1"></i>
+                      Comment
+                    </button>
+
+                    <!-- Time Entry -->
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-success"
+                      (click)="openTimeEntry(ticket)"
+                      [disabled]="isUpdating(ticket)"
+                    >
+                      <i class="bi bi-clock me-1"></i>
+                      Time Entry
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <!-- ========================= -->
+              <!-- Time Entries Row -->
+              <!-- ========================= -->
+
+              <tr *ngIf="timeEntryTicketId === ticket.id">
+                <td colspan="7">
+                  <div class="card bg-light border">
+                    <div class="card-body">
+                      <!-- Header -->
+
+                      <div class="d-flex align-items-center mb-3">
+                        <i class="bi bi-clock-history text-success me-2"></i>
+
+                        <strong>Time Entries</strong>
+
+                        <span
+                          class="badge bg-secondary ms-2"
+                          *ngIf="timeEntries[ticket.id]?.length"
+                        >
+                          {{ timeEntries[ticket.id].length }}
+                        </span>
+                      </div>
+
+                      <!-- Loading -->
+
+                      <div
+                        *ngIf="loadingTimeEntries[ticket.id]"
+                        class="text-center py-3"
+                      >
+                        <div
+                          class="spinner-border spinner-border-sm text-success"
+                        ></div>
+
+                        <span class="ms-2 text-muted">
+                          Loading time entries...
+                        </span>
+                      </div>
+
+                      <!-- No Entries -->
+
+                      <div
+                        *ngIf="
+                          !loadingTimeEntries[ticket.id] &&
+                          (!timeEntries[ticket.id] ||
+                            timeEntries[ticket.id].length === 0)
+                        "
+                        class="text-center text-muted py-3"
+                      >
+                        <i class="bi bi-clock fs-4 d-block mb-2"></i>
+
+                        No time entries yet.
+                      </div>
+
+                      <!-- Existing Entries -->
+
+                      <div
+                        *ngIf="
+                          !loadingTimeEntries[ticket.id] &&
+                          timeEntries[ticket.id].length > 0
+                        "
+                        class="mb-4"
+                      >
+                        <div
+                          *ngFor="let entry of timeEntries[ticket.id]"
+                          class="border rounded bg-white p-3 mb-2"
+                        >
+                          <div
+                            class="d-flex justify-content-between align-items-center mb-2"
+                          >
+                            <div>
+                              <i class="bi bi-clock me-2 text-success"></i>
+
+                              <strong>
+                                {{ entry.durationMinutes }} minutes
+                              </strong>
+                            </div>
+
+                            <small class="text-muted">
+                              {{ entry.workDate | date: "mediumDate" }}
+                            </small>
+                          </div>
+
+                          <div class="text-muted">
+                            {{ entry.description }}
+                          </div>
+                        </div>
+                      </div>
+
+                      <hr />
+
+                      <!-- Add Time Entry -->
+
+                      <div class="d-flex align-items-center mb-3">
+                        <i class="bi bi-plus-circle text-success me-2"></i>
+
+                        <strong>Add Time Entry</strong>
+                      </div>
+
+                      <div class="row g-3">
+                        <!-- Work Date -->
+
+                        <div class="col-md-3">
+                          <label class="form-label"> Work Date </label>
+
+                          <input
+                            type="date"
+                            class="form-control"
+                            [(ngModel)]="timeEntry.workDate"
+                            [disabled]="isUpdating(ticket)"
+                          />
+                        </div>
+
+                        <!-- Duration -->
+
+                        <div class="col-md-3">
+                          <label class="form-label"> Duration (Minutes) </label>
+
+                          <input
+                            type="number"
+                            min="1"
+                            class="form-control"
+                            [(ngModel)]="timeEntry.durationMinutes"
+                            [disabled]="isUpdating(ticket)"
+                            placeholder="e.g. 60"
+                          />
+                        </div>
+
+                        <!-- Description -->
+
+                        <div class="col-md-6">
+                          <label class="form-label"> Description </label>
+
+                          <input
+                            type="text"
+                            class="form-control"
+                            [(ngModel)]="timeEntry.description"
+                            [disabled]="isUpdating(ticket)"
+                            placeholder="Describe the work performed..."
+                          />
+                        </div>
+                      </div>
+
+                      <!-- Actions -->
+
+                      <div class="d-flex justify-content-end gap-2 mt-3">
+                        <button
+                          type="button"
+                          class="btn btn-outline-secondary"
+                          (click)="cancelTimeEntry()"
+                          [disabled]="isUpdating(ticket)"
+                        >
+                          <i class="bi bi-x-circle me-1"></i>
+                          Cancel
+                        </button>
+
+                        <button
+                          type="button"
+                          class="btn btn-success"
+                          (click)="createTimeEntry(ticket)"
+                          [disabled]="
+                            isUpdating(ticket) ||
+                            !timeEntry.workDate ||
+                            timeEntry.durationMinutes <= 0 ||
+                            !timeEntry.description.trim()
+                          "
+                        >
+                          <span
+                            *ngIf="isUpdating(ticket)"
+                            class="spinner-border spinner-border-sm me-1"
+                          ></span>
+
+                          <i
+                            *ngIf="!isUpdating(ticket)"
+                            class="bi bi-clock me-1"
+                          ></i>
+
+                          {{
+                            isUpdating(ticket) ? "Saving..." : "Add Time Entry"
+                          }}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <!-- ========================= -->
+              <!-- Comments Row -->
+              <!-- ========================= -->
+
+              <tr *ngIf="showCommentBox[ticket.id]">
+                <td colspan="7">
+                  <div class="card bg-light border">
+                    <div class="card-body">
+                      <!-- ========================= -->
+                      <!-- Comment Header -->
+                      <!-- ========================= -->
+
+                      <div class="d-flex align-items-center mb-3">
+                        <i class="bi bi-chat-left-text text-primary me-2"></i>
+
+                        <strong>Ticket Comments</strong>
+
+                        <span
+                          class="badge bg-secondary ms-2"
+                          *ngIf="comments[ticket.id].length > 0"
+                        >
+                          {{ comments[ticket.id].length }}
+                        </span>
+                      </div>
+
+                      <!-- ========================= -->
+                      <!-- Loading Comments -->
+                      <!-- ========================= -->
+
+                      <div
+                        *ngIf="loadingComments[ticket.id]"
+                        class="text-center py-3"
+                      >
+                        <div
+                          class="spinner-border spinner-border-sm text-primary"
+                        ></div>
+
+                        <span class="ms-2 text-muted">
+                          Loading comments...
+                        </span>
+                      </div>
+
+                      <!-- ========================= -->
+                      <!-- No Comments -->
+                      <!-- ========================= -->
+
+                      <div
+                        *ngIf="
+                          !loadingComments[ticket.id] &&
+                          comments[ticket.id].length === 0
+                        "
+                        class="text-muted text-center py-3"
+                      >
+                        <i class="bi bi-chat fs-4 d-block mb-2"></i>
+
+                        No comments yet.
+                      </div>
+
+                      <!-- ========================= -->
+                      <!-- Previous Comments -->
+                      <!-- ========================= -->
+
+                      <div
+                        *ngIf="
+                          !loadingComments[ticket.id] &&
+                          comments[ticket.id].length > 0
+                        "
+                        class="mb-4"
+                      >
+                        <div
+                          *ngFor="let comment of comments[ticket.id]"
+                          class="border rounded bg-white p-3 mb-2"
+                        >
+                          <div
+                            class="d-flex justify-content-between align-items-center mb-2"
+                          >
+                            <div>
+                              <i class="bi bi-person-circle me-2"></i>
+
+                              <strong>
+                                {{ comment.userName || comment.userId }}
+                              </strong>
+                            </div>
+
+                            <small class="text-muted">
+                              {{ comment.createdAt | date: "medium" }}
+                            </small>
+                          </div>
+
+                          <div class="text-muted">
+                            {{ comment.content }}
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- ========================= -->
+                      <!-- Loading Comments -->
+                      <!-- ========================= -->
+
+                      <div
+                        *ngIf="loadingComments[ticket.id]"
+                        class="text-center py-3"
+                      >
+                        <div
+                          class="spinner-border spinner-border-sm text-primary"
+                        ></div>
+
+                        <span class="ms-2 text-muted">
+                          Loading comments...
+                        </span>
+                      </div>
+                      <!-- ========================= -->
+                      <!-- No Comments -->
+                      <!-- ========================= -->
+
+                      <div
+                        *ngIf="
+                          !loadingComments[ticket.id] &&
+                          comments[ticket.id].length === 0
+                        "
+                        class="text-muted text-center py-3"
+                      >
+                        <i class="bi bi-chat fs-4 d-block mb-2"></i>
+
+                        No comments yet.
+                      </div>
+
+                      <!-- ========================= -->
+                      <!-- Previous Comments -->
+                      <!-- ========================= -->
+
+                      <div
+                        *ngIf="
+                          !loadingComments[ticket.id] &&
+                          comments[ticket.id].length > 0
+                        "
+                        class="mb-4"
+                      >
+                        <div
+                          *ngFor="let comment of comments[ticket.id]"
+                          class="border rounded bg-white p-3 mb-2"
+                        >
+                          <div
+                            class="d-flex justify-content-between align-items-center mb-2"
+                          >
+                            <div>
+                              <i class="bi bi-person-circle me-2"></i>
+
+                              <strong>
+                                {{ comment.userName || comment.userId }}
+                              </strong>
+                            </div>
+
+                            <small class="text-muted">
+                              {{ comment.createdAt | date: "medium" }}
+                            </small>
+                          </div>
+
+                          <div class="text-muted">
+                            {{ comment.content }}
+                          </div>
+                        </div>
+                      </div>
+                      <hr />
+
+                      <!-- ========================= -->
+                      <!-- Add Comment -->
+                      <!-- ========================= -->
+
+                      <div class="d-flex align-items-center mb-3">
+                        <i class="bi bi-plus-circle text-primary me-2"></i>
+
+                        <strong> Add Comment </strong>
+                      </div>
+
+                      <textarea
+                        class="form-control"
+                        rows="3"
+                        [(ngModel)]="commentText[ticket.id]"
+                        placeholder="Write your comment..."
+                        [disabled]="isCommenting(ticket)"
+                      ></textarea>
+
+                      <!-- ========================= -->
+                      <!-- Comment Actions -->
+                      <!-- ========================= -->
+
+                      <div class="d-flex justify-content-end gap-2 mt-3">
+                        <!-- Cancel -->
+
+                        <button
+                          type="button"
+                          class="btn btn-outline-secondary"
+                          (click)="toggleCommentBox(ticket)"
+                          [disabled]="isCommenting(ticket)"
+                        >
+                          <i class="bi bi-x-circle me-1"></i>
+
+                          Cancel
+                        </button>
+
+                        <!-- Add Comment -->
+
+                        <button
+                          type="button"
+                          class="btn btn-primary"
+                          (click)="addComment(ticket)"
+                          [disabled]="
+                            commentingTicketId === ticket.id ||
+                            !hasCommentText(ticket.id)
+                          "
+                        >
+                          <span
+                            *ngIf="commentingTicketId === ticket.id"
+                            class="spinner-border spinner-border-sm me-1"
+                          ></span>
+
+                          <i
+                            *ngIf="commentingTicketId !== ticket.id"
+                            class="bi bi-send me-1"
+                          ></i>
+
+                          {{
+                            commentingTicketId === ticket.id
+                              ? "Adding..."
+                              : "Add Comment"
+                          }}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </ng-container>
+          </tbody>
+        </table>
+
+        <!-- ========================= -->
+        <!-- Pagination -->
+        <!-- ========================= -->
+
+        <div
+          class="d-flex flex-column flex-md-row justify-content-between align-items-center mt-4 gap-3"
+          *ngIf="!isLoadingTickets && totalCount > 0"
+        >
+          <!-- Results -->
+
+          <div class="text-muted">
+            Showing
+
+            <strong>
+              {{ displayedFrom }}
+            </strong>
+
+            -
+
+            <strong>
+              {{ displayedTo }}
+            </strong>
+
+            of
+
+            <strong>
+              {{ totalCount }}
+            </strong>
+
+            tickets
+          </div>
+
+          <!-- Pagination -->
+
+          <nav aria-label="Tickets pagination">
+            <ul class="pagination mb-0">
+              <!-- Previous -->
+
+              <li
+                class="page-item"
+                [class.disabled]="currentPage === 1 || isLoadingTickets"
               >
-                <option
-                  *ngFor="let priority of priorities"
-                  [ngValue]="priority.value"
+                <button
+                  type="button"
+                  class="page-link"
+                  (click)="previousPage()"
+                  [disabled]="currentPage === 1 || isLoadingTickets"
                 >
-                  {{ priority.label }}
-                </option>
-              </select>
-            </td>
+                  <i class="bi bi-chevron-left"></i>
 
-            <!-- Status -->
-            <td>
-              <select
-                class="form-select form-select-sm"
-                [ngModel]="ticket.status"
-                (ngModelChange)="updateStatus(ticket, $event)"
+                  Previous
+                </button>
+              </li>
+
+              <!-- Pages -->
+
+              <li
+                class="page-item"
+                *ngFor="let page of pages"
+                [class.active]="page === currentPage"
               >
-                <option
-                  *ngFor="let status of statuses"
-                  [ngValue]="status.value"
+                <button
+                  type="button"
+                  class="page-link"
+                  (click)="goToPage(page)"
+                  [disabled]="isLoadingTickets"
                 >
-                  {{ status.label }}
-                </option>
-              </select>
-            </td>
+                  {{ page }}
+                </button>
+              </li>
 
-            <!-- Assigned Agent -->
-            <td>
-              <span *ngIf="ticket.assignedAgentId" class="badge bg-success">
-                Assigned
-              </span>
+              <!-- Next -->
 
-              <span *ngIf="!ticket.assignedAgentId" class="badge bg-secondary">
-                Unassigned
-              </span>
-            </td>
-
-            <!-- Created At -->
-            <td>
-              {{ ticket.createdAt | date: "medium" }}
-            </td>
-
-            <!-- Actions -->
-            <td>
-              <button
-                *ngIf="ticket.assignedAgentId"
-                class="btn btn-sm btn-outline-danger"
-                (click)="unassignTicket(ticket)"
+              <li
+                class="page-item"
+                [class.disabled]="
+                  currentPage === totalPages || isLoadingTickets
+                "
               >
-                Unassign
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+                <button
+                  type="button"
+                  class="page-link"
+                  (click)="nextPage()"
+                  [disabled]="currentPage === totalPages || isLoadingTickets"
+                >
+                  Next
+
+                  <i class="bi bi-chevron-right"></i>
+                </button>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
     </div>
   </div>
 </div>

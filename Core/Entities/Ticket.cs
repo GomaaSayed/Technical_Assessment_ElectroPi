@@ -129,7 +129,7 @@ public class Ticket : AggregateRoot<Guid>
 
         SetUpdatedAt();
     }
-    public void AssignAgent(
+    public TicketActivity AssignAgent(
         Guid agentId,
         Guid performedByUserId)
     {
@@ -147,16 +147,18 @@ public class Ticket : AggregateRoot<Guid>
 
         AssignedAgentId = agentId;
 
-        AddActivity(
+        var activity = AddActivity(
             performedByUserId,
             TicketActivityType.AgentAssigned,
             oldAgentId?.ToString(),
             agentId.ToString());
 
         SetUpdatedAt();
+
+        return activity;
     }
 
-    public void UnassignAgent(Guid performedByUserId)
+    public TicketActivity? UnassignAgent(Guid performedByUserId)
     {
         if (performedByUserId == Guid.Empty)
             throw new ArgumentException(
@@ -164,19 +166,21 @@ public class Ticket : AggregateRoot<Guid>
                 nameof(performedByUserId));
 
         if (AssignedAgentId is null)
-            return;
+            return null;
 
         var oldAgentId = AssignedAgentId;
 
         AssignedAgentId = null;
 
-        AddActivity(
+        var activity = AddActivity(
             performedByUserId,
             TicketActivityType.AgentUnassigned,
             oldAgentId?.ToString(),
             null);
 
         SetUpdatedAt();
+
+        return activity;
     }
 
     public void ChangePriority(
@@ -204,7 +208,7 @@ public class Ticket : AggregateRoot<Guid>
         SetUpdatedAt();
     }
 
-    public void ChangeStatus(
+    public TicketActivity ChangeStatus(
         TicketStatus newStatus,
         Guid performedByUserId)
     {
@@ -214,7 +218,8 @@ public class Ticket : AggregateRoot<Guid>
                 nameof(performedByUserId));
 
         if (Status == newStatus)
-            return;
+            throw new InvalidOperationException(
+                "Ticket already has this status.");
 
         ValidateStatusTransition(Status, newStatus);
 
@@ -232,13 +237,15 @@ public class Ticket : AggregateRoot<Guid>
             ClosedAt = DateTime.UtcNow;
         }
 
-        AddActivity(
+        var activity = AddActivity(
             performedByUserId,
             TicketActivityType.StatusChanged,
             oldStatus.ToString(),
             newStatus.ToString());
 
         SetUpdatedAt();
+
+        return activity;
     }
 
     public void Resolve(Guid performedByUserId)
@@ -255,7 +262,7 @@ public class Ticket : AggregateRoot<Guid>
             performedByUserId);
     }
 
-    public void AddComment(
+    public TicketComment AddComment(
         Guid userId,
         string content)
     {
@@ -264,27 +271,43 @@ public class Ticket : AggregateRoot<Guid>
                 "User ID cannot be empty.",
                 nameof(userId));
 
+        if (string.IsNullOrWhiteSpace(content))
+            throw new ArgumentException(
+                "Comment content cannot be empty.",
+                nameof(content));
+
         var comment = new TicketComment(
             Guid.NewGuid(),
             Id,
             userId,
             content);
 
-        _comments.Add(comment);
-
-        AddActivity(
-            userId,
-            TicketActivityType.CommentAdded);
-
         SetUpdatedAt();
+
+        return comment;
     }
 
-    public void LogTime(
-        Guid userId,
-        DateTime workDate,
-        int durationMinutes,
-        string description)
+    public TimeEntry LogTime(
+      Guid userId,
+      DateTime workDate,
+      int durationMinutes,
+      string description)
     {
+        if (userId == Guid.Empty)
+            throw new ArgumentException(
+                "User ID cannot be empty.",
+                nameof(userId));
+
+        if (durationMinutes <= 0)
+            throw new ArgumentException(
+                "Duration must be greater than zero.",
+                nameof(durationMinutes));
+
+        if (string.IsNullOrWhiteSpace(description))
+            throw new ArgumentException(
+                "Description cannot be empty.",
+                nameof(description));
+
         var timeEntry = new TimeEntry(
             Guid.NewGuid(),
             Id,
@@ -293,9 +316,9 @@ public class Ticket : AggregateRoot<Guid>
             durationMinutes,
             description);
 
-        _timeEntries.Add(timeEntry);
-
         SetUpdatedAt();
+
+        return timeEntry;
     }
 
     public int GetTotalTimeInMinutes()
@@ -303,11 +326,11 @@ public class Ticket : AggregateRoot<Guid>
         return _timeEntries.Sum(x => x.DurationMinutes);
     }
 
-    private void AddActivity(
-        Guid userId,
-        TicketActivityType activityType,
-        string? oldValue = null,
-        string? newValue = null)
+    private TicketActivity AddActivity(
+      Guid userId,
+      TicketActivityType activityType,
+      string? oldValue = null,
+      string? newValue = null)
     {
         var activity = new TicketActivity(
             Guid.NewGuid(),
@@ -318,6 +341,8 @@ public class Ticket : AggregateRoot<Guid>
             newValue);
 
         _activities.Add(activity);
+
+        return activity;
     }
 
     private static void ValidateStatusTransition(

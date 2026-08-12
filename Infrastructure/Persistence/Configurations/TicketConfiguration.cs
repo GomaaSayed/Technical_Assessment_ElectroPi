@@ -44,21 +44,34 @@ public class TicketConfiguration : IEntityTypeConfiguration<Ticket>
         builder.Property(x => x.UpdatedAt)
             .IsRequired();
 
+        // Comments
         builder.HasMany(x => x.Comments)
             .WithOne()
             .HasForeignKey(x => x.TicketId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.Navigation(x => x.Comments)
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        // Activities
         builder.HasMany(x => x.Activities)
             .WithOne()
             .HasForeignKey(x => x.TicketId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.Navigation(x => x.Activities)
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        // Time Entries
         builder.HasMany(x => x.TimeEntries)
             .WithOne()
             .HasForeignKey(x => x.TicketId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.Navigation(x => x.TimeEntries)
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        // Indexes
         builder.HasIndex(x => x.CustomerId);
 
         builder.HasIndex(x => x.AssignedAgentId);

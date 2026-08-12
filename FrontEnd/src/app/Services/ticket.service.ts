@@ -6,6 +6,7 @@ import { ConfigService } from '../shared/services/config-service';
 import { UpdateTicketDTO } from '../DTOs/UpdateTicketDTO';
 import { CreateTicketDTO } from '../DTOs/CreateTicketDTO';
 import { CreateTimeEntryDTO } from '../DTOs/CreateTimeEntryDTO';
+import { TimeEntryDTO } from '../DTOs/TimeEntryDTO';
 
 @Injectable({
   providedIn: 'root',
@@ -54,7 +55,7 @@ export class TicketService {
     assignedAgentId?: string,
     pageNumber: number = 1,
     pageSize: number = 10,
-    sortBy?: number,
+    sortBy?: string,
     descending: boolean = false,
   ): Observable<any> {
     return this.getBaseUrl().pipe(
@@ -81,11 +82,13 @@ export class TicketService {
           params.AssignedAgentId = assignedAgentId;
         }
 
-        if (sortBy !== undefined) {
+        if (sortBy) {
           params.SortBy = sortBy;
         }
 
-        return this.http.get<any>(`${baseUrl}Ticket`, { params });
+        return this.http.get<any>(`${baseUrl}Ticket`, {
+          params,
+        });
       }),
     );
   }
@@ -96,7 +99,7 @@ export class TicketService {
     assignedAgentId?: string,
     pageNumber: number = 1,
     pageSize: number = 10,
-    sortBy?: number,
+    sortBy?: string,
     descending: boolean = false,
   ): Observable<any> {
     return this.getBaseUrl().pipe(
@@ -123,7 +126,7 @@ export class TicketService {
           params.AssignedAgentId = assignedAgentId;
         }
 
-        if (sortBy !== undefined) {
+        if (sortBy) {
           params.SortBy = sortBy;
         }
 
@@ -140,7 +143,7 @@ export class TicketService {
     assignedAgentId?: string,
     pageNumber: number = 1,
     pageSize: number = 10,
-    sortBy?: number,
+    sortBy?: string,
     descending: boolean = false,
   ): Observable<any> {
     return this.getBaseUrl().pipe(
@@ -167,11 +170,13 @@ export class TicketService {
           params.AssignedAgentId = assignedAgentId;
         }
 
-        if (sortBy !== undefined) {
+        if (sortBy) {
           params.SortBy = sortBy;
         }
 
-        return this.http.get<any>(`${baseUrl}Ticket/my-tickets`, { params });
+        return this.http.get<any>(`${baseUrl}Ticket/my-tickets`, {
+          params,
+        });
       }),
     );
   }
@@ -223,7 +228,15 @@ export class TicketService {
       ),
     );
   }
-
+  getTimeEntries(ticketId: string): Observable<TimeEntryDTO[]> {
+    return this.getBaseUrl().pipe(
+      switchMap((baseUrl) =>
+        this.http.get<TimeEntryDTO[]>(
+          `${baseUrl}Ticket/${ticketId}/time-entries`,
+        ),
+      ),
+    );
+  }
   createTimeEntry(
     ticketId: string,
     timeEntry: CreateTimeEntryDTO,
@@ -234,6 +247,22 @@ export class TicketService {
           `${baseUrl}Ticket/${ticketId}/time-entries`,
           timeEntry,
         ),
+      ),
+    );
+  }
+  addComment(ticketId: string, content: string): Observable<any> {
+    return this.getBaseUrl().pipe(
+      switchMap((baseUrl) =>
+        this.http.post<any>(`${baseUrl}Ticket/${ticketId}/comments`, {
+          content: content,
+        }),
+      ),
+    );
+  }
+  getTicketComments(ticketId: string): Observable<any[]> {
+    return this.getBaseUrl().pipe(
+      switchMap((baseUrl) =>
+        this.http.get<any[]>(`${baseUrl}Ticket/${ticketId}/comments`),
       ),
     );
   }

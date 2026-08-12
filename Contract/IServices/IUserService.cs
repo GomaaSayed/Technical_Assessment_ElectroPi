@@ -27,4 +27,5 @@ public interface IUserService
     Task<IdentityResult> DeleteAsync(
         string id,
         CancellationToken cancellationToken = default);
+
 }

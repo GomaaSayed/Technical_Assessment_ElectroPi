@@ -150,6 +150,10 @@ builder.Services.AddScoped<
     ITicketService,
     TicketService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ITicketActivityRepository, TicketActivityRepository>();
+builder.Services.AddScoped<ITicketCommentRepository, TicketCommentRepository>();
+builder.Services.AddScoped<ITimeEntryRepository, TimeEntryRepository>();
+
 
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 var app = builder.Build();

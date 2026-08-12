@@ -64,7 +64,7 @@ export class CustomerComponent implements OnInit {
    * 3 = Status
    * 4 = CreatedAt
    */
-  sortBy: number | undefined = undefined;
+  sortBy: string | undefined = undefined;
   descending = true;
   // =========================
   // Pagination
@@ -139,10 +139,10 @@ export class CustomerComponent implements OnInit {
     // Filters only
     this.filterForm = this.fb.group({
       search: [''],
-
       status: [null],
-
       priority: [null],
+      sortBy: [null as string | null],
+      descending: [true],
     });
   }
 
@@ -256,16 +256,25 @@ export class CustomerComponent implements OnInit {
         ? Number(filters.priority)
         : undefined;
 
+    const sortBy = filters.sortBy?.trim() || undefined;
+
+    const descending = filters.descending ?? true;
+
+    console.log('Sorting:', {
+      sortBy,
+      descending,
+    });
+
     this.ticketService
       .getCustomerTickets(
         search,
         status,
         priority,
-        undefined, // AssignedAgentId
-        this.currentPage, // PageNumber
-        this.pageSize, // PageSize
-        this.sortBy, // SortBy
-        this.descending, // Descending
+        undefined,
+        this.currentPage,
+        this.pageSize,
+        sortBy,
+        descending,
       )
       .subscribe({
         next: (response) => {
@@ -294,7 +303,6 @@ export class CustomerComponent implements OnInit {
         },
       });
   }
-
   // =========================
   // Apply Filters
   // =========================
@@ -327,20 +335,24 @@ export class CustomerComponent implements OnInit {
   // Table Sorting
   // =========================
 
-  sort(field: string): void {
-    const currentSort = this.filterForm.get('sortBy')?.value;
+  sort(column: string): void {
+    console.log('Sorting by column:', column);
+    const currentSortBy = this.filterForm.get('sortBy')?.value;
     const currentDescending = this.filterForm.get('descending')?.value ?? true;
 
-    if (currentSort === field) {
+    if (currentSortBy === column) {
       this.filterForm.patchValue({
         descending: !currentDescending,
       });
     } else {
       this.filterForm.patchValue({
-        sortBy: field,
-        descending: false,
+        sortBy: column,
+        descending: true,
       });
+      console.log('Form values after sorting:', this.filterForm.value);
     }
+
+    this.currentPage = 1;
 
     this.loadCustomerTickets();
   }

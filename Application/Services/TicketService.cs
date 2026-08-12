@@ -9,20 +9,27 @@ namespace Application.Services;
 public class TicketService : ITicketService
 {
     private readonly ITicketRepository _ticketRepository;
+    private readonly ITicketActivityRepository _ticketActivityRepository;
+    private readonly ITicketCommentRepository _ticketCommentRepository;
+    private readonly ITimeEntryRepository _timeEntryRepository;
     private readonly IUnitOfWork _unitOfWork;
-
     private readonly ICurrentUser _currentUser;
 
     public TicketService(
         ITicketRepository ticketRepository,
+        ITicketActivityRepository ticketActivityRepository,
+        ITicketCommentRepository ticketCommentRepository,
+        ITimeEntryRepository timeEntryRepository,
         IUnitOfWork unitOfWork,
         ICurrentUser currentUser)
     {
         _ticketRepository = ticketRepository;
+        _ticketActivityRepository = ticketActivityRepository;
+        _ticketCommentRepository = ticketCommentRepository;
+        _timeEntryRepository = timeEntryRepository;
         _unitOfWork = unitOfWork;
         _currentUser = currentUser;
     }
-
     public async Task<TicketDto?> GetByIdAsync(
         Guid id,
         CancellationToken cancellationToken = default)
@@ -315,7 +322,25 @@ public class TicketService : ITicketService
 
         return MapToDto(ticket);
     }
+    public async Task<IReadOnlyList<TicketCommentDto>> GetCommentsAsync(
+    Guid ticketId,
+    CancellationToken cancellationToken = default)
+    {
+        var comments = await _ticketCommentRepository.GetAllAsync(
+            cancellationToken);
 
+        return comments
+            .Where(x => x.TicketId == ticketId)
+            .OrderBy(x => x.CreatedAt)
+            .Select(x => new TicketCommentDto
+            {
+                Id = x.Id,
+                UserId = x.UserId,
+                Content = x.Content,
+                CreatedAt = x.CreatedAt
+            })
+            .ToList();
+    }
     public async Task UpdateAsync(
         Guid id,
         UpdateTicketDto request,
@@ -361,20 +386,20 @@ public class TicketService : ITicketService
     }
 
     public async Task AssignAgentAsync(
-        Guid ticketId,
-        Guid agentId,
-        Guid performedByUserId,
-        CancellationToken cancellationToken = default)
+     Guid ticketId,
+     Guid agentId,
+     Guid performedByUserId,
+     CancellationToken cancellationToken = default)
     {
         var ticket = await GetTicketAsync(
             ticketId,
             cancellationToken);
 
-        ticket.AssignAgent(
+        var activity = ticket.AssignAgent(
             agentId,
             performedByUserId);
 
-        _ticketRepository.Update(ticket);
+        await  _ticketActivityRepository.AddAsync(activity);
 
         await _unitOfWork.SaveChangesAsync(
             cancellationToken);
@@ -389,30 +414,35 @@ public class TicketService : ITicketService
             ticketId,
             cancellationToken);
 
-        ticket.UnassignAgent(
+        var activity = ticket.UnassignAgent(
             performedByUserId);
 
-        _ticketRepository.Update(ticket);
+        if (activity is not null)
+        {
+          await  _ticketActivityRepository.AddAsync(activity);
+        }
 
         await _unitOfWork.SaveChangesAsync(
             cancellationToken);
     }
 
     public async Task ChangeStatusAsync(
-        Guid ticketId,
-        TicketStatus status,
-        Guid performedByUserId,
-        CancellationToken cancellationToken = default)
+      Guid ticketId,
+      TicketStatus status,
+      Guid performedByUserId,
+      CancellationToken cancellationToken = default)
     {
         var ticket = await GetTicketAsync(
             ticketId,
             cancellationToken);
 
-        ticket.ChangeStatus(
+        var activity = ticket.ChangeStatus(
             status,
             performedByUserId);
 
-        _ticketRepository.Update(ticket);
+        await _ticketActivityRepository.AddAsync(
+            activity,
+            cancellationToken);
 
         await _unitOfWork.SaveChangesAsync(
             cancellationToken);
@@ -439,9 +469,9 @@ public class TicketService : ITicketService
     }
 
     public async Task AddCommentAsync(
-      Guid ticketId,
-      AddCommentDto request,
-      CancellationToken cancellationToken = default)
+        Guid ticketId,
+        AddCommentDto request,
+        CancellationToken cancellationToken = default)
     {
         var ticket = await GetTicketAsync(
             ticketId,
@@ -451,19 +481,21 @@ public class TicketService : ITicketService
             ?? throw new UnauthorizedAccessException(
                 "User is not authenticated.");
 
-        ticket.AddComment(
+        var comment = ticket.AddComment(
             userId,
             request.Content);
 
-        _ticketRepository.Update(ticket);
+        await _ticketCommentRepository.AddAsync(
+            comment,
+            cancellationToken);
 
         await _unitOfWork.SaveChangesAsync(
             cancellationToken);
     }
     public async Task LogTimeAsync(
-      Guid ticketId,
-      LogTimeEntryDto request,
-      CancellationToken cancellationToken = default)
+        Guid ticketId,
+        LogTimeEntryDto request,
+        CancellationToken cancellationToken = default)
     {
         var ticket = await GetTicketAsync(
             ticketId,
@@ -473,13 +505,15 @@ public class TicketService : ITicketService
             ?? throw new UnauthorizedAccessException(
                 "User is not authenticated.");
 
-        ticket.LogTime(
+        var timeEntry = ticket.LogTime(
             userId,
             request.WorkDate,
             request.DurationMinutes,
             request.Description);
 
-        _ticketRepository.Update(ticket);
+        await _timeEntryRepository.AddAsync(
+            timeEntry,
+            cancellationToken);
 
         await _unitOfWork.SaveChangesAsync(
             cancellationToken);
@@ -501,7 +535,27 @@ public class TicketService : ITicketService
 
         return ticket;
     }
+    public async Task<IReadOnlyList<LogTimeEntryDto>> GetTimeEntriesAsync(
+ Guid ticketId,
+ CancellationToken cancellationToken = default)
+    {
+        var timeEntries = await _timeEntryRepository.GetAllAsync(
+            cancellationToken);
 
+        return timeEntries
+            .Where(x => x.TicketId == ticketId)
+            .OrderByDescending(x => x.WorkDate)
+            .Select(x => new LogTimeEntryDto
+            {
+
+                WorkDate = x.WorkDate,
+                DurationMinutes = x.DurationMinutes,
+                Description = x.Description,
+
+            })
+            .ToList();
+
+    }
     private static TicketDto MapToDto(Ticket ticket)
     {
         return new TicketDto
@@ -542,6 +596,7 @@ public class TicketService : ITicketService
                 })
                 .ToList()
         };
+
     }
 
     private static string GenerateTicketNumber()

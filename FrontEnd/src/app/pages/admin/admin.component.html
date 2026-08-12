@@ -1,0 +1,673 @@
+<div class="container mt-4">
+  <!-- ========================= -->
+  <!-- Page Header -->
+  <!-- ========================= -->
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body d-flex justify-content-between align-items-center">
+      <div>
+        <h4 class="mb-1">
+          <i class="bi bi-speedometer2 me-2"></i>
+          Ticket Management
+        </h4>
+
+        <p class="text-muted mb-0">
+          Manage, assign and monitor all support tickets.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        class="btn btn-outline-primary"
+        (click)="loadTickets()"
+        [disabled]="isLoadingTickets"
+      >
+        <i class="bi bi-arrow-clockwise me-1"></i>
+
+        {{ isLoadingTickets ? "Loading..." : "Refresh" }}
+      </button>
+    </div>
+  </div>
+
+  <!-- ========================= -->
+  <!-- Success Message -->
+  <!-- ========================= -->
+
+  <div
+    *ngIf="successMessage"
+    class="alert alert-success alert-dismissible fade show"
+  >
+    <i class="bi bi-check-circle me-2"></i>
+
+    {{ successMessage }}
+
+    <button
+      type="button"
+      class="btn-close"
+      (click)="successMessage = ''"
+    ></button>
+  </div>
+
+  <!-- ========================= -->
+  <!-- Error Message -->
+  <!-- ========================= -->
+
+  <div
+    *ngIf="errorMessage"
+    class="alert alert-danger alert-dismissible fade show"
+  >
+    <i class="bi bi-exclamation-circle me-2"></i>
+
+    {{ errorMessage }}
+
+    <button
+      type="button"
+      class="btn-close"
+      (click)="errorMessage = ''"
+    ></button>
+  </div>
+
+  <!-- ========================= -->
+  <!-- Filters -->
+  <!-- ========================= -->
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-header">
+      <h5 class="mb-0">
+        <i class="bi bi-funnel me-2"></i>
+        Filters
+      </h5>
+    </div>
+
+    <div class="card-body">
+      <form [formGroup]="filterForm" (ngSubmit)="applyFilters()">
+        <div class="row g-3">
+          <!-- Search -->
+
+          <div class="col-md-6">
+            <label class="form-label"> Search </label>
+
+            <input
+              type="text"
+              class="form-control"
+              formControlName="search"
+              placeholder="Ticket number, title or description..."
+            />
+          </div>
+
+          <!-- Status -->
+
+          <div class="col-md-3">
+            <label class="form-label"> Status </label>
+
+            <select class="form-select" formControlName="status">
+              <option [ngValue]="null">All Statuses</option>
+
+              <option *ngFor="let item of statuses" [ngValue]="item.value">
+                {{ item.label }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Priority -->
+
+          <div class="col-md-3">
+            <label class="form-label"> Priority </label>
+
+            <select class="form-select" formControlName="priority">
+              <option [ngValue]="null">All Priorities</option>
+
+              <option *ngFor="let item of priorities" [ngValue]="item.value">
+                {{ item.label }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Buttons -->
+
+        <div class="d-flex gap-2 mt-3">
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="isLoadingTickets"
+          >
+            <i class="bi bi-search me-1"></i>
+            Apply Filters
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            (click)="clearFilters()"
+            [disabled]="isLoadingTickets"
+          >
+            <i class="bi bi-x-circle me-1"></i>
+            Clear
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================= -->
+  <!-- Tickets -->
+  <!-- ========================= -->
+
+  <div class="card shadow-sm">
+    <div class="card-header">
+      <h5 class="mb-0">
+        <i class="bi bi-list-ul me-2"></i>
+
+        All Tickets
+
+        <span class="badge bg-secondary ms-2">
+          {{ totalCount }}
+        </span>
+      </h5>
+    </div>
+
+    <div class="card-body">
+      <!-- ========================= -->
+      <!-- Loading -->
+      <!-- ========================= -->
+
+      <div *ngIf="isLoadingTickets" class="text-center py-5">
+        <div class="spinner-border text-primary"></div>
+
+        <p class="mt-3 text-muted">Loading tickets...</p>
+      </div>
+
+      <!-- ========================= -->
+      <!-- Empty -->
+      <!-- ========================= -->
+
+      <div
+        *ngIf="!isLoadingTickets && tickets.length === 0"
+        class="text-center text-muted py-5"
+      >
+        <i class="bi bi-ticket-perforated fs-1 d-block mb-3"></i>
+
+        <h5>No tickets found</h5>
+
+        <p>There are no tickets matching your filters.</p>
+      </div>
+
+      <!-- ========================= -->
+      <!-- Table -->
+      <!-- ========================= -->
+
+      <div
+        class="table-responsive"
+        *ngIf="!isLoadingTickets && tickets.length > 0"
+      >
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <!-- Title -->
+
+              <th class="sortable" (click)="sort('title')">
+                <div class="d-flex align-items-center gap-2">
+                  Title
+
+                  <i class="bi" [ngClass]="getSortIcon('title')"></i>
+                </div>
+              </th>
+
+              <!-- Customer -->
+
+              <th>Customer</th>
+
+              <!-- Priority -->
+
+              <th class="sortable" (click)="sort('priority')">
+                <div class="d-flex align-items-center gap-2">
+                  Priority
+
+                  <i class="bi" [ngClass]="getSortIcon('priority')"></i>
+                </div>
+              </th>
+
+              <!-- Status -->
+
+              <th class="sortable" (click)="sort('status')">
+                <div class="d-flex align-items-center gap-2">
+                  Status
+
+                  <i class="bi" [ngClass]="getSortIcon('status')"></i>
+                </div>
+              </th>
+
+              <!-- Assigned Agent -->
+
+              <th>Assigned Agent</th>
+
+              <!-- Created -->
+
+              <th class="sortable" (click)="sort('createdat')">
+                <div class="d-flex align-items-center gap-2">
+                  Created At
+
+                  <i class="bi" [ngClass]="getSortIcon('createdat')"></i>
+                </div>
+              </th>
+
+              <!-- Actions -->
+
+              <th>Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <ng-container *ngFor="let ticket of tickets">
+              <!-- ================================================= -->
+              <!-- Ticket Row -->
+              <!-- ================================================= -->
+
+              <tr>
+                <!-- ========================= -->
+                <!-- Title -->
+                <!-- ========================= -->
+
+                <td>
+                  <strong>
+                    {{ ticket.title }}
+                  </strong>
+
+                  <small class="d-block text-muted">
+                    {{ ticket.ticketNumber }}
+                  </small>
+                </td>
+
+                <!-- ========================= -->
+                <!-- Customer -->
+                <!-- ========================= -->
+
+                <td>
+                  <small>
+                    {{ ticket.customerId }}
+                  </small>
+                </td>
+
+                <!-- ========================= -->
+                <!-- Priority -->
+                <!-- ========================= -->
+
+                <td>
+                  <select
+                    class="form-select form-select-sm"
+                    [ngModel]="ticket.priority"
+                    [disabled]="isProcessing"
+                    (ngModelChange)="updatePriority(ticket.id, $event)"
+                  >
+                    <option
+                      *ngFor="let item of priorities"
+                      [ngValue]="item.value"
+                    >
+                      {{ item.label }}
+                    </option>
+                  </select>
+                </td>
+
+                <!-- ========================= -->
+                <!-- Status -->
+                <!-- ========================= -->
+
+                <td>
+                  <select
+                    class="form-select form-select-sm"
+                    [ngModel]="ticket.status"
+                    [disabled]="isProcessing"
+                    (ngModelChange)="updateStatus(ticket.id, $event)"
+                  >
+                    <option
+                      *ngFor="let item of statuses"
+                      [ngValue]="item.value"
+                    >
+                      {{ item.label }}
+                    </option>
+                  </select>
+                </td>
+
+                <!-- ========================= -->
+                <!-- Assigned Agent -->
+                <!-- ========================= -->
+
+                <td>
+                  <select
+                    class="form-select form-select-sm"
+                    [value]="ticket.assignedAgentId || ''"
+                    [disabled]="isProcessing || isLoadingAgents"
+                    (change)="
+                      assignTicket(ticket.id, $any($event.target).value)
+                    "
+                  >
+                    <option value="">Select Agent</option>
+
+                    <option *ngFor="let agent of agents" [value]="agent.id">
+                      {{
+                        agent.fullName ||
+                          agent.name ||
+                          agent.userName ||
+                          agent.email
+                      }}
+                    </option>
+                  </select>
+
+                  <!-- Current Agent -->
+
+                  <small
+                    *ngIf="ticket.assignedAgentId"
+                    class="text-muted d-block mt-1"
+                  >
+                    <i class="bi bi-person-check me-1"></i>
+
+                    Assigned to:
+
+                    {{ getAgentName(ticket.assignedAgentId) }}
+                  </small>
+
+                  <!-- Loading Agents -->
+
+                  <small
+                    *ngIf="isLoadingAgents"
+                    class="text-muted d-block mt-1"
+                  >
+                    Loading agents...
+                  </small>
+                </td>
+
+                <!-- ========================= -->
+                <!-- Created -->
+                <!-- ========================= -->
+
+                <td>
+                  {{ ticket.createdAt | date: "medium" }}
+                </td>
+
+                <!-- ========================= -->
+                <!-- Actions -->
+                <!-- ========================= -->
+
+                <td>
+                  <div class="btn-group">
+                    <!-- Comments -->
+
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-primary"
+                      [disabled]="isCommenting(ticket)"
+                      title="Comments"
+                      (click)="toggleCommentBox(ticket)"
+                    >
+                      <i class="bi bi-chat-left-text"></i>
+
+                      <span class="ms-1">
+                        {{ showCommentBox[ticket.id] ? "Close" : "Comments" }}
+                      </span>
+                    </button>
+
+                    <!-- Unassign -->
+
+                    <button
+                      *ngIf="ticket.assignedAgentId"
+                      type="button"
+                      class="btn btn-sm btn-outline-warning"
+                      [disabled]="isProcessing"
+                      title="Unassign ticket"
+                      (click)="unassignTicket(ticket.id)"
+                    >
+                      <i class="bi bi-person-dash"></i>
+                    </button>
+
+                    <!-- Delete -->
+
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-danger"
+                      [disabled]="isProcessing"
+                      title="Delete ticket"
+                      (click)="deleteTicket(ticket.id)"
+                    >
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- ================================================= -->
+              <!-- Comments Row -->
+              <!-- ================================================= -->
+
+              <tr *ngIf="showCommentBox[ticket.id]">
+                <td colspan="7">
+                  <div class="card bg-light border">
+                    <div class="card-body">
+                      <!-- ========================= -->
+                      <!-- Comment Header -->
+                      <!-- ========================= -->
+
+                      <div class="d-flex align-items-center mb-3">
+                        <i class="bi bi-chat-left-text text-primary me-2"></i>
+
+                        <strong> Ticket Comments </strong>
+
+                        <span
+                          class="badge bg-secondary ms-2"
+                          *ngIf="getComments(ticket.id).length > 0"
+                        >
+                          {{ getComments(ticket.id).length }}
+                        </span>
+                      </div>
+
+                      <!-- ========================= -->
+                      <!-- Loading -->
+                      <!-- ========================= -->
+
+                      <div
+                        *ngIf="loadingComments[ticket.id]"
+                        class="text-center py-3"
+                      >
+                        <div
+                          class="spinner-border spinner-border-sm text-primary"
+                        ></div>
+
+                        <span class="ms-2 text-muted">
+                          Loading comments...
+                        </span>
+                      </div>
+
+                      <!-- ========================= -->
+                      <!-- Comments -->
+                      <!-- ========================= -->
+
+                      <div
+                        *ngIf="
+                          !loadingComments[ticket.id] &&
+                          getComments(ticket.id).length > 0
+                        "
+                        class="mb-4"
+                      >
+                        <div
+                          *ngFor="let comment of getComments(ticket.id)"
+                          class="border rounded bg-white p-3 mb-2"
+                        >
+                          <div
+                            class="d-flex justify-content-between align-items-center mb-2"
+                          >
+                            <div>
+                              <i class="bi bi-person-circle me-2"></i>
+
+                              <strong>
+                                {{ comment.userName || comment.userId }}
+                              </strong>
+                            </div>
+
+                            <small class="text-muted">
+                              {{ comment.createdAt | date: "medium" }}
+                            </small>
+                          </div>
+
+                          <div class="text-muted">
+                            {{ comment.content }}
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- ========================= -->
+                      <!-- No Comments -->
+                      <!-- ========================= -->
+
+                      <div
+                        *ngIf="
+                          !loadingComments[ticket.id] &&
+                          getComments(ticket.id).length === 0
+                        "
+                        class="text-muted text-center py-3"
+                      >
+                        <i class="bi bi-chat fs-4 d-block mb-2"></i>
+
+                        No comments yet.
+                      </div>
+
+                      <hr />
+
+                      <!-- ========================= -->
+                      <!-- Add Comment -->
+                      <!-- ========================= -->
+
+                      <div class="d-flex align-items-center mb-3">
+                        <i class="bi bi-plus-circle text-primary me-2"></i>
+
+                        <strong> Add Comment </strong>
+                      </div>
+
+                      <textarea
+                        class="form-control"
+                        rows="3"
+                        [(ngModel)]="commentText[ticket.id]"
+                        placeholder="Write your comment..."
+                        [disabled]="isCommenting(ticket)"
+                      ></textarea>
+
+                      <!-- ========================= -->
+                      <!-- Comment Actions -->
+                      <!-- ========================= -->
+
+                      <div class="d-flex justify-content-end gap-2 mt-3">
+                        <!-- Cancel -->
+
+                        <button
+                          type="button"
+                          class="btn btn-outline-secondary"
+                          (click)="toggleCommentBox(ticket)"
+                          [disabled]="isCommenting(ticket)"
+                        >
+                          <i class="bi bi-x-circle me-1"></i>
+
+                          Cancel
+                        </button>
+
+                        <!-- Add -->
+
+                        <button
+                          type="button"
+                          class="btn btn-primary"
+                          (click)="addComment(ticket)"
+                          [disabled]="
+                            commentingTicketId === ticket.id ||
+                            !hasCommentText(ticket.id)
+                          "
+                        >
+                          <span
+                            *ngIf="commentingTicketId === ticket.id"
+                            class="spinner-border spinner-border-sm me-1"
+                          ></span>
+
+                          <i
+                            *ngIf="commentingTicketId !== ticket.id"
+                            class="bi bi-send me-1"
+                          ></i>
+
+                          {{
+                            commentingTicketId === ticket.id
+                              ? "Adding..."
+                              : "Add Comment"
+                          }}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </ng-container>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ========================= -->
+      <!-- Pagination -->
+      <!-- ========================= -->
+
+      <div
+        *ngIf="!isLoadingTickets && totalPages > 0"
+        class="d-flex justify-content-between align-items-center mt-4"
+      >
+        <!-- Page Size -->
+
+        <div class="d-flex align-items-center gap-2">
+          <span class="text-muted"> Page size: </span>
+
+          <select
+            class="form-select form-select-sm"
+            style="width: 80px"
+            [value]="pageSize"
+            (change)="changePageSize(+$any($event.target).value)"
+          >
+            <option [value]="5">5</option>
+
+            <option [value]="10">10</option>
+
+            <option [value]="20">20</option>
+
+            <option [value]="50">50</option>
+          </select>
+        </div>
+
+        <!-- Pagination -->
+
+        <nav>
+          <ul class="pagination mb-0">
+            <!-- Previous -->
+
+            <li class="page-item" [class.disabled]="currentPage === 1">
+              <button class="page-link" type="button" (click)="previousPage()">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+            </li>
+
+            <!-- Pages -->
+
+            <li
+              *ngFor="let page of pages"
+              class="page-item"
+              [class.active]="page === currentPage"
+            >
+              <button type="button" class="page-link" (click)="goToPage(page)">
+                {{ page }}
+              </button>
+            </li>
+
+            <!-- Next -->
+
+            <li class="page-item" [class.disabled]="currentPage === totalPages">
+              <button class="page-link" type="button" (click)="nextPage()">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>

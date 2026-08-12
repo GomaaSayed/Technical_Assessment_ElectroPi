@@ -33,4 +33,6 @@ public class TicketDto
     public IReadOnlyList<TicketCommentDto> Comments { get; set; } = [];
 
     public IReadOnlyList<TicketActivityDto> Activities { get; set; } = [];
+    public IReadOnlyList<LogTimeEntryDto> TimeEntries { get; set; } = [];
+
 }

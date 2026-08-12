@@ -273,4 +273,36 @@ public class TicketController : ControllerBase
 
         return NoContent();
     }
+    // --------------------------------------------------
+    // Get Comments
+    // --------------------------------------------------
+
+    [HttpGet("{ticketId:guid}/comments")]
+    [Authorize(Roles = "Admin,SupportAgent")]
+    public async Task<IActionResult> GetComments(
+        Guid ticketId,
+        CancellationToken cancellationToken)
+    {
+        var comments = await _ticketService.GetCommentsAsync(
+            ticketId,
+            cancellationToken);
+
+        return Ok(comments);
+    }
+    // --------------------------------------------------
+    // Get Time Entries
+    // --------------------------------------------------
+
+    [HttpGet("{ticketId:guid}/time-entries")]
+    [Authorize(Roles = "Admin,SupportAgent")]
+    public async Task<IActionResult> GetTimeEntries(
+        Guid ticketId,
+        CancellationToken cancellationToken)
+    {
+        var timeEntries = await _ticketService.GetTimeEntriesAsync(
+            ticketId,
+            cancellationToken);
+
+        return Ok(timeEntries);
+    }
 }
