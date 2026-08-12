@@ -25,7 +25,7 @@ The system allows organizations to create, assign, track, and manage customer su
 
 ### Frontend
 
-- Angular
+- Angular 18.2.13
 - TypeScript
 - RxJS
 - Reactive Forms
