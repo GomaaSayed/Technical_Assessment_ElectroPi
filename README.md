@@ -125,11 +125,72 @@ A time entry contains:
 
 The system calculates the total time spent on a ticket based on its time entries.
 
-### Example
+------------------------
+Role Responsibilities
+Admin
 
-```text
-Time Entry 1: 60 minutes
-Time Entry 2: 30 minutes
-Time Entry 3: 45 minutes
+Admins can:
 
-Total: 135 minutes
+View all tickets
+Assign tickets
+Unassign tickets
+Change ticket priority
+Change ticket status
+Manage ticket-related operations
+Access dashboard statistics
+Support Agent
+
+Support Agents can:
+
+View assigned tickets
+Update ticket status
+Add comments
+Log time entries
+View ticket comments
+View ticket time entries
+Receive real-time SignalR notifications
+Customer
+
+Customers can:
+
+Create tickets
+View their own tickets
+Add comments
+Update allowed ticket information
+Close resolved tickets
+
+Customers cannot access tickets belonging to other customers.
+
+📝 Assumptions & Limitations
+Customers are restricted to their own tickets at the API level.
+Support Agents can only access tickets assigned to them through the dedicated "My Tickets" functionality.
+Multiple time entries are supported per ticket.
+Total ticket time is calculated from the ticket's time entries.
+SignalR real-time notifications are currently implemented for Support Agents.
+Test credentials are provided through seeded data.
+Sensitive credentials and secrets should not be committed to source control.
+🔒 Security
+
+The application follows security practices including:
+
+JWT authentication
+Role-based authorization
+Protected API endpoints
+Customer data isolation
+Server-side authorization checks
+Input validation
+DTO-based API contracts
+No EF Core entities exposed directly through API responses
+Optimistic concurrency
+HTTPS support
+📦 Deliverables
+
+The repository contains:
+
+Backend source code
+Angular frontend
+EF Core migrations
+Seed data
+Automated tests
+Swagger/OpenAPI documentation
+README documentation
